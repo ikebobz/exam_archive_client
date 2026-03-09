@@ -1,0 +1,25 @@
+package com.exampro.app.presentation.navigation
+
+sealed class Routes(val route: String) {
+    object Login : Routes("login")
+    object Register : Routes("register")
+    object Dashboard : Routes("dashboard")
+    object ExamList : Routes("exams")
+    object SubjectList : Routes("exams/{examId}/subjects") {
+        fun createRoute(examId: Int) = "exams/$examId/subjects"
+    }
+    object QuestionList : Routes("subjects/{subjectId}/questions") {
+        fun createRoute(subjectId: Int) = "subjects/$subjectId/questions"
+    }
+    object QuestionDetail : Routes("questions/{questionId}") {
+        fun createRoute(questionId: Int) = "questions/$questionId"
+    }
+    object Quiz : Routes("quiz/{subjectId}") {
+        fun createRoute(subjectId: Int) = "quiz/$subjectId"
+    }
+    object QuizResult : Routes("quiz-result/{subjectId}/{total}/{correct}") {
+        fun createRoute(subjectId: Int, total: Int, correct: Int) =
+            "quiz-result/$subjectId/$total/$correct"
+    }
+    object Profile : Routes("profile")
+}
