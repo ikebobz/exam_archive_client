@@ -2,12 +2,19 @@ package com.exampro.app.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.exampro.app.data.api.DashboardApi
+import com.exampro.app.data.db.dao.ExamDao
+import com.exampro.app.data.db.dao.SubjectDao
+import com.exampro.app.data.db.dao.QuestionDao
 import com.exampro.app.data.models.DashboardStats
+import com.exampro.app.data.repository.AuthRepository
+import com.exampro.app.data.repository.ExamRepository
+import com.exampro.app.data.repository.SubjectRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,33 +26,44 @@ sealed class DashboardUiState {
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val dashboardApi: DashboardApi
+    private val examRepository: ExamRepository,
+    private val subjectRepository: SubjectRepository,
+    private val examDao: ExamDao,
+    private val subjectDao: SubjectDao,
+    private val questionDao: QuestionDao,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
-    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<DashboardUiState> = combine(
+        examDao.getAllExams(),
+        subjectDao.getAllSubjects(),
+        questionDao.getBookmarkedQuestions()
+    ) { exams, subjects, bookmarkedQuestions ->
+        val stats = DashboardStats(
+            totalExams = exams.size,
+            totalSubjects = subjects.size,
+            totalQuestions = bookmarkedQuestions.size
+        )
+        authRepository.saveStats(stats)
+        DashboardUiState.Success(stats)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = DashboardUiState.Success(authRepository.getCachedStats())
+    )
 
     init {
-        loadStats()
-    }
-
-    fun loadStats() {
-        viewModelScope.launch {
-            _uiState.value = DashboardUiState.Loading
-            try {
-                val response = dashboardApi.getStats()
-                if (response.isSuccessful && response.body() != null) {
-                    _uiState.value = DashboardUiState.Success(response.body()!!)
-                } else {
-                    _uiState.value = DashboardUiState.Error("Failed to load stats: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                _uiState.value = DashboardUiState.Error(e.message ?: "Failed to load dashboard stats")
-            }
-        }
+        refresh()
     }
 
     fun refresh() {
-        loadStats()
+        viewModelScope.launch {
+            try {
+                examRepository.refreshExams()
+                subjectRepository.refreshSubjects()
+            } catch (e: Exception) {
+                // Background refresh failed, UI continues to show local data
+            }
+        }
     }
 }

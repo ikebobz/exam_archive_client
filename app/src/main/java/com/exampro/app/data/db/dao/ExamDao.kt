@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.exampro.app.data.db.entities.ExamEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -26,4 +27,10 @@ interface ExamDao {
 
     @Query("DELETE FROM exams")
     suspend fun deleteAll()
+
+    @Transaction
+    suspend fun replaceAll(exams: List<ExamEntity>) {
+        deleteAll()
+        insertAll(exams)
+    }
 }

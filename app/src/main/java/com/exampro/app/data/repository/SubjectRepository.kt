@@ -31,8 +31,7 @@ class SubjectRepository @Inject constructor(
             val response = subjectApi.getSubjects()
             if (response.isSuccessful && response.body() != null) {
                 val subjects = response.body()!!
-                subjectDao.deleteAll()
-                subjectDao.insertAll(subjects.map { it.toEntity() })
+                subjectDao.replaceAll(subjects.map { it.toEntity() })
                 Result.success(subjects)
             } else {
                 val cached = subjectDao.getAllSubjectsList()
@@ -58,8 +57,7 @@ class SubjectRepository @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 val allSubjects = response.body()!!
                 val filtered = allSubjects.filter { it.examId == examId }
-                subjectDao.deleteByExam(examId)
-                subjectDao.insertAll(filtered.map { it.toEntity() })
+                subjectDao.replaceByExam(examId, filtered.map { it.toEntity() })
                 Result.success(filtered)
             } else {
                 val cached = subjectDao.getSubjectsByExamList(examId)

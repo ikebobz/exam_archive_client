@@ -14,7 +14,6 @@ import com.exampro.app.presentation.screens.auth.LoginUiState
 import com.exampro.app.presentation.screens.auth.RegisterScreen
 import com.exampro.app.presentation.screens.auth.RegisterUiState
 import com.exampro.app.presentation.screens.dashboard.DashboardScreen
-import com.exampro.app.presentation.viewmodels.DashboardUiState
 import com.exampro.app.presentation.screens.exam.ExamListScreen
 import com.exampro.app.presentation.screens.profile.ProfileScreen
 import com.exampro.app.presentation.screens.question.QuestionDetailScreen
@@ -37,6 +36,12 @@ fun NavGraph(
     val startDestination = when (authState) {
         is AuthUiState.Authenticated -> Routes.Dashboard.route
         else -> Routes.Login.route
+    }
+
+    val onGoHome: () -> Unit = {
+        navController.navigate(Routes.Dashboard.route) {
+            popUpTo(Routes.Dashboard.route) { inclusive = true }
+        }
     }
 
     NavHost(
@@ -93,7 +98,13 @@ fun NavGraph(
             DashboardScreen(
                 uiState = dashboardState,
                 onNavigateToExams = {
-                    navController.navigate(Routes.ExamList.route)
+                    navController.navigate(Routes.ExamList.createRoute())
+                },
+                onNavigateToSubjects = {
+                    navController.navigate(Routes.ExamList.createRoute(purpose = "subjects"))
+                },
+                onNavigateToBookmarks = {
+                    navController.navigate(Routes.Bookmarks.route)
                 },
                 onNavigateToProfile = {
                     navController.navigate(Routes.Profile.route)
@@ -102,26 +113,47 @@ fun NavGraph(
             )
         }
 
-        composable(Routes.ExamList.route) {
+        composable(
+            route = Routes.ExamList.route,
+            arguments = listOf(navArgument("purpose") { 
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) {
             ExamListScreen(
-                onExamClick = { examId ->
-                    navController.navigate(Routes.SubjectList.createRoute(examId))
+                onExamClick = { examId, purpose ->
+                    navController.navigate(Routes.SubjectList.createRoute(examId, purpose))
                 },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onHomeClick = onGoHome
             )
         }
 
         composable(
             route = Routes.SubjectList.route,
-            arguments = listOf(navArgument("examId") { type = NavType.IntType })
+            arguments = listOf(
+                navArgument("examId") { type = NavType.IntType },
+                navArgument("purpose") { 
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) { backStackEntry ->
             val examId = backStackEntry.arguments?.getInt("examId") ?: 0
             SubjectListScreen(
                 examId = examId,
-                onSubjectClick = { subjectId ->
-                    navController.navigate(Routes.QuestionList.createRoute(subjectId))
+                onSubjectClick = { subjectId, purpose ->
+                    if (purpose == "questions") {
+                        navController.navigate(Routes.QuestionList.createRoute(subjectId))
+                    } else {
+                        // Default behavior for other purposes
+                        navController.navigate(Routes.QuestionList.createRoute(subjectId))
+                    }
                 },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onHomeClick = onGoHome
             )
         }
 
@@ -135,7 +167,19 @@ fun NavGraph(
                 onQuestionClick = { questionId ->
                     navController.navigate(Routes.QuestionDetail.createRoute(questionId))
                 },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onHomeClick = onGoHome
+            )
+        }
+
+        composable(Routes.Bookmarks.route) {
+            QuestionListScreen(
+                subjectId = -1, // Use -1 to indicate Bookmarks
+                onQuestionClick = { questionId ->
+                    navController.navigate(Routes.QuestionDetail.createRoute(questionId))
+                },
+                onBackClick = { navController.popBackStack() },
+                onHomeClick = onGoHome
             )
         }
 
@@ -146,7 +190,8 @@ fun NavGraph(
             val questionId = backStackEntry.arguments?.getInt("questionId") ?: 0
             QuestionDetailScreen(
                 questionId = questionId,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onHomeClick = onGoHome
             )
         }
 
@@ -158,6 +203,7 @@ fun NavGraph(
             QuizScreen(
                 subjectId = subjectId,
                 onBack = { navController.popBackStack() },
+                onHomeClick = onGoHome,
                 onQuizFinished = { score, total ->
                     navController.navigate(
                         Routes.QuizResult.createRoute(subjectId, total, score)
@@ -190,7 +236,8 @@ fun NavGraph(
                 onBackToSubjects = {
                     navController.popBackStack(Routes.ExamList.route, false)
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onHomeClick = onGoHome
             )
         }
 
@@ -204,7 +251,8 @@ fun NavGraph(
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onHomeClick = onGoHome
             )
         }
     }

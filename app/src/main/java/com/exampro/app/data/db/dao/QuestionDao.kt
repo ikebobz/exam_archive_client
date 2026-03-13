@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface QuestionDao {
+    @Query("SELECT * FROM questions WHERE isBookmarked = 1 ORDER BY id DESC")
+    fun getBookmarkedQuestions(): Flow<List<QuestionEntity>>
+
     @Query("SELECT * FROM questions ORDER BY id DESC")
     fun getAllQuestions(): Flow<List<QuestionEntity>>
 
@@ -46,6 +49,12 @@ interface QuestionDao {
 
     @Query("DELETE FROM answers")
     suspend fun deleteAllAnswers()
+
+    @Query("DELETE FROM questions WHERE id = :id")
+    suspend fun deleteQuestionById(id: Int)
+
+    @Query("DELETE FROM answers WHERE questionId = :questionId")
+    suspend fun deleteAnswersByQuestion(questionId: Int)
 
     @Query("DELETE FROM questions WHERE subjectId = :subjectId")
     suspend fun deleteQuestionsBySubject(subjectId: Int)

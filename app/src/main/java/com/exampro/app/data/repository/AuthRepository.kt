@@ -2,7 +2,9 @@ package com.exampro.app.data.repository
 
 import android.content.SharedPreferences
 import com.exampro.app.data.api.AuthApi
+import com.exampro.app.data.db.AppDatabase
 import com.exampro.app.data.models.AuthResponse
+import com.exampro.app.data.models.DashboardStats
 import com.exampro.app.data.models.LoginRequest
 import com.exampro.app.data.models.RegisterRequest
 import com.exampro.app.data.models.UserProfile
@@ -12,12 +14,16 @@ import javax.inject.Singleton
 @Singleton
 class AuthRepository @Inject constructor(
     private val authApi: AuthApi,
-    private val sharedPreferences: SharedPreferences
+    private val sharedPreferences: SharedPreferences,
+    private val database: AppDatabase
 ) {
     companion object {
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_USER_EMAIL = "user_email"
+        private const val KEY_TOTAL_EXAMS = "total_exams"
+        private const val KEY_TOTAL_SUBJECTS = "total_subjects"
+        private const val KEY_TOTAL_QUESTIONS = "total_questions"
     }
 
     suspend fun login(email: String, password: String): Result<AuthResponse> {
@@ -54,6 +60,7 @@ class AuthRepository @Inject constructor(
         return try {
             authApi.logout()
             clearSession()
+            // We don't clear the database here to preserve data across logout/login as requested
             Result.success(Unit)
         } catch (e: Exception) {
             clearSession()
@@ -100,5 +107,21 @@ class AuthRepository @Inject constructor(
             .remove(KEY_USER_ID)
             .remove(KEY_USER_EMAIL)
             .apply()
+    }
+
+    fun saveStats(stats: DashboardStats) {
+        sharedPreferences.edit()
+            .putInt(KEY_TOTAL_EXAMS, stats.totalExams)
+            .putInt(KEY_TOTAL_SUBJECTS, stats.totalSubjects)
+            .putInt(KEY_TOTAL_QUESTIONS, stats.totalQuestions)
+            .apply()
+    }
+
+    fun getCachedStats(): DashboardStats {
+        return DashboardStats(
+            totalExams = sharedPreferences.getInt(KEY_TOTAL_EXAMS, 0),
+            totalSubjects = sharedPreferences.getInt(KEY_TOTAL_SUBJECTS, 0),
+            totalQuestions = sharedPreferences.getInt(KEY_TOTAL_QUESTIONS, 0)
+        )
     }
 }

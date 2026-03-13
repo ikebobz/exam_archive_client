@@ -10,6 +10,7 @@ data class Question(
     val year: Int?,
     val difficulty: String?,
     val topic: String?,
+    val isBookmarked: Boolean = false,
     @SerializedName("createdAt") val createdAt: String?,
     @SerializedName("updatedAt") val updatedAt: String?,
     val answers: List<Answer>? = null

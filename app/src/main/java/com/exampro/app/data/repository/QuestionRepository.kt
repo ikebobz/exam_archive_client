@@ -16,23 +16,8 @@ class QuestionRepository @Inject constructor(
     private val questionApi: QuestionApi,
     private val questionDao: QuestionDao
 ) {
-    fun getQuestionsFlow(): Flow<List<Question>> {
-        return questionDao.getAllQuestions().map { entities ->
-            val questionIds = entities.map { it.id }
-            val allAnswers = if (questionIds.isNotEmpty()) {
-                questionDao.getAnswersByQuestions(questionIds)
-            } else {
-                emptyList()
-            }
-            val answersByQuestion = allAnswers.groupBy { it.questionId }
-            entities.map { entity ->
-                entity.toModel(answersByQuestion[entity.id]?.map { it.toModel() })
-            }
-        }
-    }
-
-    fun getQuestionsBySubjectFlow(subjectId: Int): Flow<List<Question>> {
-        return questionDao.getQuestionsBySubject(subjectId).map { entities ->
+    fun getBookmarkedQuestionsFlow(): Flow<List<Question>> {
+        return questionDao.getBookmarkedQuestions().map { entities ->
             val questionIds = entities.map { it.id }
             val allAnswers = if (questionIds.isNotEmpty()) {
                 questionDao.getAnswersByQuestions(questionIds)
@@ -50,15 +35,19 @@ class QuestionRepository @Inject constructor(
         return try {
             val response = questionApi.getQuestions()
             if (response.isSuccessful && response.body() != null) {
-                val questions = response.body()!!
-                cacheQuestions(questions)
-                Result.success(questions)
+                val allQuestions = response.body()!!
+                val bookmarkedIds = questionDao.getAllQuestionsList()
+                    .filter { it.isBookmarked }
+                    .map { it.id }.toSet()
+                val questionsWithBookmarks = allQuestions.map { 
+                    it.copy(isBookmarked = bookmarkedIds.contains(it.id))
+                }
+                Result.success(questionsWithBookmarks)
             } else {
-                getQuestionsFromCache()
+                Result.failure(Exception("Failed to fetch questions: ${response.code()}"))
             }
         } catch (e: Exception) {
-            val cached = getQuestionsFromCache()
-            if (cached.isSuccess) cached else Result.failure(e)
+            Result.failure(e)
         }
     }
 
@@ -68,16 +57,18 @@ class QuestionRepository @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 val allQuestions = response.body()!!
                 val filtered = allQuestions.filter { it.subjectId == subjectId }
-                questionDao.deleteAnswersBySubject(subjectId)
-                questionDao.deleteQuestionsBySubject(subjectId)
-                cacheQuestionsList(filtered)
-                Result.success(filtered)
+                val bookmarkedIds = questionDao.getAllQuestionsList()
+                    .filter { it.isBookmarked }
+                    .map { it.id }.toSet()
+                val questionsWithBookmarks = filtered.map { 
+                    it.copy(isBookmarked = bookmarkedIds.contains(it.id))
+                }
+                Result.success(questionsWithBookmarks)
             } else {
-                getQuestionsBySubjectFromCache(subjectId)
+                Result.failure(Exception("Failed to fetch questions: ${response.code()}"))
             }
         } catch (e: Exception) {
-            val cached = getQuestionsBySubjectFromCache(subjectId)
-            if (cached.isSuccess) cached else Result.failure(e)
+            Result.failure(e)
         }
     }
 
@@ -86,13 +77,12 @@ class QuestionRepository @Inject constructor(
             val response = questionApi.getQuestion(id)
             if (response.isSuccessful && response.body() != null) {
                 val question = response.body()!!
-                questionDao.insertQuestion(question.toEntity())
-                question.answers?.let { answers ->
-                    questionDao.insertAllAnswers(answers.map { it.toEntity() })
-                }
-                Result.success(question)
+                val existing = questionDao.getQuestionById(id)
+                val isBookmarked = existing?.isBookmarked ?: false
+                Result.success(question.copy(isBookmarked = isBookmarked))
             } else {
-                getQuestionFromCache(id)
+                val cached = getQuestionFromCache(id)
+                if (cached.isSuccess) cached else Result.failure(Exception("Question not found"))
             }
         } catch (e: Exception) {
             val cached = getQuestionFromCache(id)
@@ -100,45 +90,21 @@ class QuestionRepository @Inject constructor(
         }
     }
 
-    private suspend fun cacheQuestions(questions: List<Question>) {
-        questionDao.deleteAllAnswers()
-        questionDao.deleteAllQuestions()
-        cacheQuestionsList(questions)
-    }
-
-    private suspend fun cacheQuestionsList(questions: List<Question>) {
-        val questionEntities = questions.map { it.toEntity() }
-        val answerEntities = questions.flatMap { question ->
-            question.answers?.map { it.toEntity() } ?: emptyList()
-        }
-        questionDao.insertQuestionsWithAnswers(questionEntities, answerEntities)
-    }
-
-    private suspend fun getQuestionsFromCache(): Result<List<Question>> {
-        val cached = questionDao.getAllQuestionsList()
-        return if (cached.isNotEmpty()) {
-            val questionIds = cached.map { it.id }
-            val allAnswers = questionDao.getAnswersByQuestions(questionIds)
-            val answersByQuestion = allAnswers.groupBy { it.questionId }
-            Result.success(cached.map { entity ->
-                entity.toModel(answersByQuestion[entity.id]?.map { it.toModel() })
-            })
+    suspend fun toggleBookmark(question: Question): Boolean {
+        val existing = questionDao.getQuestionById(question.id)
+        return if (existing != null && existing.isBookmarked) {
+            // If it was only there because it was bookmarked, we can delete it.
+            // But if we use the table for general caching too, we might want to just update isBookmarked = false.
+            // Given the current implementation of toggleBookmark, it seems it deletes it.
+            questionDao.deleteAnswersByQuestion(question.id)
+            questionDao.deleteQuestionById(question.id)
+            false
         } else {
-            Result.failure(Exception("No cached questions available"))
-        }
-    }
-
-    private suspend fun getQuestionsBySubjectFromCache(subjectId: Int): Result<List<Question>> {
-        val cached = questionDao.getQuestionsBySubjectList(subjectId)
-        return if (cached.isNotEmpty()) {
-            val questionIds = cached.map { it.id }
-            val allAnswers = questionDao.getAnswersByQuestions(questionIds)
-            val answersByQuestion = allAnswers.groupBy { it.questionId }
-            Result.success(cached.map { entity ->
-                entity.toModel(answersByQuestion[entity.id]?.map { it.toModel() })
-            })
-        } else {
-            Result.failure(Exception("No cached questions available for this subject"))
+            questionDao.insertQuestion(question.toEntity(isBookmarked = true))
+            question.answers?.let { answers ->
+                questionDao.insertAllAnswers(answers.map { it.toEntity() })
+            }
+            true
         }
     }
 
@@ -148,11 +114,11 @@ class QuestionRepository @Inject constructor(
             val answers = questionDao.getAnswersByQuestion(id)
             Result.success(cached.toModel(answers.map { it.toModel() }))
         } else {
-            Result.failure(Exception("Question not found"))
+            Result.failure(Exception("Question not found in cache"))
         }
     }
 
-    private fun Question.toEntity(): QuestionEntity = QuestionEntity(
+    private fun Question.toEntity(isBookmarked: Boolean = false): QuestionEntity = QuestionEntity(
         id = id,
         subjectId = subjectId,
         questionText = questionText,
@@ -160,6 +126,7 @@ class QuestionRepository @Inject constructor(
         year = year,
         difficulty = difficulty,
         topic = topic,
+        isBookmarked = isBookmarked,
         createdAt = createdAt ?: "",
         updatedAt = updatedAt ?: ""
     )
@@ -182,6 +149,7 @@ class QuestionRepository @Inject constructor(
         year = year,
         difficulty = difficulty,
         topic = topic,
+        isBookmarked = isBookmarked,
         createdAt = createdAt,
         updatedAt = updatedAt,
         answers = answers

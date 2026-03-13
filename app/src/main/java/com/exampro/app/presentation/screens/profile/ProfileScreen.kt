@@ -17,9 +17,6 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Quiz
-import androidx.compose.material.icons.filled.Score
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,19 +27,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exampro.app.presentation.components.LoadingIndicator
-import com.exampro.app.presentation.components.StatsCard
 import com.exampro.app.presentation.components.TopBar
 import com.exampro.app.presentation.viewmodels.AuthUiState
 import com.exampro.app.presentation.viewmodels.AuthViewModel
@@ -53,6 +45,7 @@ fun ProfileScreen(
     onToggleDarkMode: (Boolean) -> Unit,
     onLogout: () -> Unit,
     onBack: () -> Unit,
+    onHomeClick: (() -> Unit)? = null,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
@@ -62,7 +55,8 @@ fun ProfileScreen(
         topBar = {
             TopBar(
                 title = "Profile",
-                onBackClick = onBack
+                onBackClick = onBack,
+                onHomeClick = onHomeClick
             )
         }
     ) { paddingValues ->

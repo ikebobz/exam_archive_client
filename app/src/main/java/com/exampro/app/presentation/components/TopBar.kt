@@ -1,7 +1,9 @@
 package com.exampro.app.presentation.components
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 fun TopBar(
     title: String,
     onBackClick: (() -> Unit)? = null,
+    onHomeClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     actions: @Composable () -> Unit = {}
 ) {
@@ -37,7 +40,19 @@ fun TopBar(
                 }
             }
         },
-        actions = { actions() },
+        actions = {
+            Row {
+                if (onHomeClick != null) {
+                    IconButton(onClick = onHomeClick) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = "Home"
+                        )
+                    }
+                }
+                actions()
+            }
+        },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface

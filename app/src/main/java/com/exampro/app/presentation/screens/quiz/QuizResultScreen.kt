@@ -30,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.exampro.app.presentation.components.TopBar
 
@@ -40,7 +39,8 @@ fun QuizResultScreen(
     totalQuestions: Int,
     onRetryQuiz: () -> Unit,
     onBackToSubjects: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onHomeClick: (() -> Unit)? = null
 ) {
     val percentage = if (totalQuestions > 0) (score.toFloat() / totalQuestions * 100).toInt() else 0
     val passed = percentage >= 50
@@ -49,7 +49,8 @@ fun QuizResultScreen(
         topBar = {
             TopBar(
                 title = "Quiz Results",
-                onBackClick = onBack
+                onBackClick = onBack,
+                onHomeClick = onHomeClick
             )
         }
     ) { paddingValues ->

@@ -28,43 +28,58 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.exampro.app.data.models.Exam
 import com.exampro.app.presentation.components.ErrorMessage
 import com.exampro.app.presentation.components.ExamCard
+import com.exampro.app.presentation.components.TopBar
+import com.exampro.app.presentation.theme.ExamProTheme
 import com.exampro.app.presentation.viewmodels.ExamUiState
 import com.exampro.app.presentation.viewmodels.ExamViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExamListScreen(
-    onExamClick: (Int) -> Unit,
+    onExamClick: (Int, String?) -> Unit,
     onBackClick: (() -> Unit)? = null,
+    onHomeClick: (() -> Unit)? = null,
     viewModel: ExamViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val purpose by viewModel.purpose.collectAsState()
+
+    ExamListContent(
+        uiState = uiState,
+        title = if (purpose != null) "Select Exam" else "Exams",
+        onExamClick = { examId -> onExamClick(examId, purpose) },
+        onBackClick = onBackClick,
+        onHomeClick = onHomeClick,
+        onRefresh = { viewModel.refresh() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExamListContent(
+    uiState: ExamUiState,
+    title: String,
+    onExamClick: (Int) -> Unit,
+    onBackClick: (() -> Unit)? = null,
+    onHomeClick: (() -> Unit)? = null,
+    onRefresh: () -> Unit
+) {
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Exams") },
-                navigationIcon = {
-                    if (onBackClick != null) {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+            TopBar(
+                title = title,
+                onBackClick = onBackClick,
+                onHomeClick = onHomeClick
             )
         }
     ) { paddingValues ->
@@ -73,7 +88,7 @@ fun ExamListScreen(
             onRefresh = {
                 scope.launch {
                     isRefreshing = true
-                    viewModel.refresh()
+                    onRefresh()
                     delay(500)
                     isRefreshing = false
                 }
@@ -94,7 +109,7 @@ fun ExamListScreen(
                 is ExamUiState.Error -> {
                     ErrorMessage(
                         message = state.message,
-                        onRetry = { viewModel.refresh() }
+                        onRetry = onRefresh
                     )
                 }
                 is ExamUiState.Success -> {
@@ -128,5 +143,47 @@ fun ExamListScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ExamListScreenPreview() {
+    val sampleExams = listOf(
+        Exam(
+            id = 1,
+            name = "Civil Engineering",
+            code = "CE101",
+            description = "Basic Civil Engineering concepts and practices.",
+            createdAt = null,
+            updatedAt = null
+        ),
+        Exam(
+            id = 2,
+            name = "Computer Science",
+            code = "CS202",
+            description = "Advanced algorithms and data structures.",
+            createdAt = null,
+            updatedAt = null
+        ),
+        Exam(
+            id = 3,
+            name = "Mechanical Engineering",
+            code = "ME303",
+            description = "Principles of thermodynamics and mechanics.",
+            createdAt = null,
+            updatedAt = null
+        )
+    )
+
+    ExamProTheme {
+        ExamListContent(
+            uiState = ExamUiState.Success(sampleExams),
+            title = "Exams",
+            onExamClick = {},
+            onBackClick = {},
+            onHomeClick = {},
+            onRefresh = {}
+        )
     }
 }

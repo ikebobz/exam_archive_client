@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material.icons.filled.School
@@ -29,7 +30,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.exampro.app.data.models.DashboardStats
 import com.exampro.app.presentation.components.ErrorMessage
 import com.exampro.app.presentation.components.LoadingIndicator
 import com.exampro.app.presentation.components.StatsCard
@@ -42,7 +45,7 @@ fun DashboardScreen(
     uiState: DashboardUiState,
     onNavigateToExams: () -> Unit = {},
     onNavigateToSubjects: () -> Unit = {},
-    onNavigateToQuestions: () -> Unit = {},
+    onNavigateToBookmarks: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onRetry: () -> Unit = {}
 ) {
@@ -104,9 +107,9 @@ fun DashboardScreen(
                     )
 
                     StatsCard(
-                        label = "Total Questions",
+                        label = "Bookmarked Questions",
                         value = uiState.stats.totalQuestions.toString(),
-                        icon = Icons.Default.QuestionAnswer
+                        icon = Icons.Default.Bookmark
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -140,9 +143,9 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         QuickLinkCard(
-                            title = "Questions",
-                            icon = Icons.Default.QuestionAnswer,
-                            onClick = onNavigateToQuestions,
+                            title = "Bookmarks",
+                            icon = Icons.Default.Bookmark,
+                            onClick = onNavigateToBookmarks,
                             modifier = Modifier.weight(1f)
                         )
                         QuickLinkCard(
@@ -228,4 +231,17 @@ private fun QuickLinkCard(
             )
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DashboardScreenPreview() {
+    val mockStats = DashboardStats(
+        totalExams = 12,
+        totalSubjects = 5,
+        totalQuestions = 150
+    )
+    DashboardScreen(
+        uiState = DashboardUiState.Success(mockStats)
+    )
 }

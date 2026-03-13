@@ -22,6 +22,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.NavigateBefore
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Visibility
@@ -35,11 +39,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,11 +54,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.exampro.app.data.models.Answer
 import com.exampro.app.presentation.components.ErrorMessage
+import com.exampro.app.presentation.components.TopBar
 import com.exampro.app.presentation.viewmodels.QuestionDetailUiState
 import com.exampro.app.presentation.viewmodels.QuestionDetailViewModel
 
@@ -62,6 +69,7 @@ import com.exampro.app.presentation.viewmodels.QuestionDetailViewModel
 fun QuestionDetailScreen(
     questionId: Int,
     onBackClick: () -> Unit,
+    onHomeClick: (() -> Unit)? = null,
     viewModel: QuestionDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -70,20 +78,65 @@ fun QuestionDetailScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Question Detail") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+            TopBar(
+                title = "Question Detail",
+                onBackClick = onBackClick,
+                onHomeClick = onHomeClick,
+                actions = {
+                    if (uiState is QuestionDetailUiState.Success) {
+                        val question = (uiState as QuestionDetailUiState.Success).question
+                        IconButton(onClick = { viewModel.toggleBookmark() }) {
+                            Icon(
+                                imageVector = if (question.isBookmarked) Icons.Default.Bookmark 
+                                             else Icons.Default.BookmarkBorder,
+                                contentDescription = if (question.isBookmarked) "Remove bookmark" 
+                                                     else "Bookmark question",
+                                tint = if (question.isBookmarked) MaterialTheme.colorScheme.primary 
+                                       else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                }
             )
+        },
+        bottomBar = {
+            if (uiState is QuestionDetailUiState.Success) {
+                val state = uiState as QuestionDetailUiState.Success
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    OutlinedButton(
+                        onClick = { 
+                            viewModel.navigateToPrevious()
+                            showExplanation = false
+                            selectedAnswerId = null
+                        },
+                        enabled = state.hasPrevious,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Previous")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(
+                        onClick = { 
+                            viewModel.navigateToNext()
+                            showExplanation = false
+                            selectedAnswerId = null
+                        },
+                        enabled = state.hasNext,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Next")
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = null)
+                    }
+                }
+            }
         }
     ) { paddingValues ->
         when (val state = uiState) {
@@ -114,6 +167,16 @@ fun QuestionDetailScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
+                    if (state.examName != null || state.subjectName != null) {
+                        Text(
+                            text = listOfNotNull(state.examName, state.subjectName).joinToString(" > "),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)

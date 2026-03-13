@@ -25,8 +25,7 @@ class ExamRepository @Inject constructor(
             val response = examApi.getExams()
             if (response.isSuccessful && response.body() != null) {
                 val exams = response.body()!!
-                examDao.deleteAll()
-                examDao.insertAll(exams.map { it.toEntity() })
+                examDao.replaceAll(exams.map { it.toEntity() })
                 Result.success(exams)
             } else {
                 val cached = examDao.getAllExamsList()

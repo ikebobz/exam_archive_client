@@ -7,17 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,42 +27,62 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exampro.app.presentation.components.ErrorMessage
 import com.exampro.app.presentation.components.SubjectCard
+import com.exampro.app.presentation.components.TopBar
 import com.exampro.app.presentation.viewmodels.SubjectUiState
 import com.exampro.app.presentation.viewmodels.SubjectViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubjectListScreen(
     examId: Int,
-    onSubjectClick: (Int) -> Unit,
+    onSubjectClick: (Int, String?) -> Unit,
     onBackClick: () -> Unit,
+    onHomeClick: (() -> Unit)? = null,
     viewModel: SubjectViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var isRefreshing by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+    val purpose by viewModel.purpose.collectAsState()
 
     LaunchedEffect(examId) {
         viewModel.setExamId(examId)
     }
 
+    val baseTitle = if (purpose == "questions") "Select Subject" else "Subjects"
+    val title = when (val state = uiState) {
+        is SubjectUiState.Success -> state.examName ?: baseTitle
+        else -> baseTitle
+    }
+
+    SubjectListContent(
+        uiState = uiState,
+        title = title,
+        onSubjectClick = { subjectId -> onSubjectClick(subjectId, purpose) },
+        onBackClick = onBackClick,
+        onHomeClick = onHomeClick,
+        onRefresh = { viewModel.refresh() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SubjectListContent(
+    uiState: SubjectUiState,
+    title: String,
+    onSubjectClick: (Int) -> Unit,
+    onBackClick: () -> Unit,
+    onHomeClick: (() -> Unit)? = null,
+    onRefresh: () -> Unit
+) {
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Subjects") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+            TopBar(
+                title = title,
+                onBackClick = onBackClick,
+                onHomeClick = onHomeClick
             )
         }
     ) { paddingValues ->
@@ -77,7 +91,7 @@ fun SubjectListScreen(
             onRefresh = {
                 scope.launch {
                     isRefreshing = true
-                    viewModel.refresh()
+                    onRefresh()
                     delay(500)
                     isRefreshing = false
                 }
@@ -98,7 +112,7 @@ fun SubjectListScreen(
                 is SubjectUiState.Error -> {
                     ErrorMessage(
                         message = state.message,
-                        onRetry = { viewModel.refresh() }
+                        onRetry = onRefresh
                     )
                 }
                 is SubjectUiState.Success -> {

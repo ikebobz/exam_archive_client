@@ -21,15 +21,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,7 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -55,6 +51,7 @@ import com.exampro.app.presentation.viewmodels.QuizViewModel
 fun QuizScreen(
     subjectId: Int,
     onBack: () -> Unit,
+    onHomeClick: (() -> Unit)? = null,
     onQuizFinished: (score: Int, total: Int) -> Unit,
     viewModel: QuizViewModel = hiltViewModel()
 ) {
@@ -69,6 +66,7 @@ fun QuizScreen(
             TopBar(
                 title = "Quiz",
                 onBackClick = onBack,
+                onHomeClick = onHomeClick,
                 actions = {
                     if (uiState is QuizUiState.InProgress) {
                         val state = uiState as QuizUiState.InProgress

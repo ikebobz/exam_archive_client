@@ -1,9 +1,11 @@
 package com.exampro.app.di
 
+import android.content.SharedPreferences
 import com.exampro.app.data.api.AuthApi
 import com.exampro.app.data.api.ExamApi
 import com.exampro.app.data.api.QuestionApi
 import com.exampro.app.data.api.SubjectApi
+import com.exampro.app.data.db.AppDatabase
 import com.exampro.app.data.db.dao.ExamDao
 import com.exampro.app.data.db.dao.QuestionDao
 import com.exampro.app.data.db.dao.StudyProgressDao
@@ -13,8 +15,6 @@ import com.exampro.app.data.repository.ExamRepository
 import com.exampro.app.data.repository.QuestionRepository
 import com.exampro.app.data.repository.StudyProgressRepository
 import com.exampro.app.data.repository.SubjectRepository
-import android.content.SharedPreferences
-import com.exampro.app.di.AuthPrefs
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,9 +29,10 @@ object RepositoryModule {
     @Singleton
     fun provideAuthRepository(
         authApi: AuthApi,
-        @AuthPrefs prefs: SharedPreferences
+        @AuthPrefs prefs: SharedPreferences,
+        database: AppDatabase
     ): AuthRepository {
-        return AuthRepository(authApi, prefs)
+        return AuthRepository(authApi, prefs, database)
     }
 
     @Provides

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.exampro.app.data.db.entities.SubjectEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -35,4 +36,16 @@ interface SubjectDao {
 
     @Query("DELETE FROM subjects WHERE examId = :examId")
     suspend fun deleteByExam(examId: Int)
+
+    @Transaction
+    suspend fun replaceAll(subjects: List<SubjectEntity>) {
+        deleteAll()
+        insertAll(subjects)
+    }
+
+    @Transaction
+    suspend fun replaceByExam(examId: Int, subjects: List<SubjectEntity>) {
+        deleteByExam(examId)
+        insertAll(subjects)
+    }
 }

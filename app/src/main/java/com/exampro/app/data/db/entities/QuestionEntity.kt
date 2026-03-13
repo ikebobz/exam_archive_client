@@ -1,22 +1,9 @@
 package com.exampro.app.data.db.entities
 
 import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(
-    tableName = "questions",
-    foreignKeys = [
-        ForeignKey(
-            entity = SubjectEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["subjectId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [Index("subjectId")]
-)
+@Entity(tableName = "questions")
 data class QuestionEntity(
     @PrimaryKey val id: Int,
     val subjectId: Int,
@@ -25,6 +12,7 @@ data class QuestionEntity(
     val year: Int?,
     val difficulty: String?,
     val topic: String?,
+    val isBookmarked: Boolean = false,
     val createdAt: String,
     val updatedAt: String
 )

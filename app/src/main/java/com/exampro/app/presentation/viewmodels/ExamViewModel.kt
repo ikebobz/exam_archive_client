@@ -1,5 +1,6 @@
 package com.exampro.app.presentation.viewmodels
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exampro.app.data.models.Exam
@@ -19,29 +20,38 @@ sealed class ExamUiState {
 
 @HiltViewModel
 class ExamViewModel @Inject constructor(
-    private val examRepository: ExamRepository
+    private val examRepository: ExamRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ExamUiState>(ExamUiState.Loading)
     val uiState: StateFlow<ExamUiState> = _uiState.asStateFlow()
 
+    private val _purpose = MutableStateFlow(savedStateHandle.get<String>("purpose"))
+    val purpose: StateFlow<String?> = _purpose.asStateFlow()
+
     init {
-        loadExams()
+        observeExams()
+        refresh()
     }
 
-    fun loadExams() {
+    private fun observeExams() {
         viewModelScope.launch {
-            _uiState.value = ExamUiState.Loading
-            val result = examRepository.refreshExams()
-            result.onSuccess { exams ->
-                _uiState.value = ExamUiState.Success(exams)
-            }.onFailure { e ->
-                _uiState.value = ExamUiState.Error(e.message ?: "Failed to load exams")
+            examRepository.getExamsFlow().collect { exams ->
+                // If we have data, show it immediately and stop loading
+                if (exams.isNotEmpty() || _uiState.value !is ExamUiState.Loading) {
+                    _uiState.value = ExamUiState.Success(exams)
+                }
             }
         }
     }
 
     fun refresh() {
-        loadExams()
+        viewModelScope.launch {
+            val result = examRepository.refreshExams()
+            if (result.isFailure && _uiState.value is ExamUiState.Loading) {
+                _uiState.value = ExamUiState.Error(result.exceptionOrNull()?.message ?: "Failed to load exams")
+            }
+        }
     }
 }
