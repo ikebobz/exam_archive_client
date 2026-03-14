@@ -31,7 +31,9 @@ class SubjectRepository @Inject constructor(
             val response = subjectApi.getSubjects()
             if (response.isSuccessful && response.body() != null) {
                 val subjects = response.body()!!
-                subjectDao.replaceAll(subjects.map { it.toEntity() })
+                if (subjects.isNotEmpty()) {
+                    subjectDao.replaceAll(subjects.map { it.toEntity() })
+                }
                 Result.success(subjects)
             } else {
                 val cached = subjectDao.getAllSubjectsList()
@@ -53,18 +55,37 @@ class SubjectRepository @Inject constructor(
 
     suspend fun getSubjectsByExam(examId: Int): Result<List<Subject>> {
         return try {
-            val response = subjectApi.getSubjects()
-            if (response.isSuccessful && response.body() != null) {
+            // Fetch from API
+            val response = try {
+                subjectApi.getSubjects()
+            } catch (e: Exception) {
+                null
+            }
+
+            if (response != null && response.isSuccessful && response.body() != null) {
                 val allSubjects = response.body()!!
                 val filtered = allSubjects.filter { it.examId == examId }
-                subjectDao.replaceByExam(examId, filtered.map { it.toEntity() })
-                Result.success(filtered)
+                
+                if (filtered.isNotEmpty()) {
+                    // Only update DB if we have fresh data for this specific exam
+                    subjectDao.replaceByExam(examId, filtered.map { it.toEntity() })
+                    Result.success(filtered)
+                } else {
+                    // API returned data but none for this exam, check local cache
+                    val cached = subjectDao.getSubjectsByExamList(examId)
+                    if (cached.isNotEmpty()) {
+                        Result.success(cached.map { it.toModel() })
+                    } else {
+                        Result.success(emptyList())
+                    }
+                }
             } else {
+                // API call failed, fall back to cache
                 val cached = subjectDao.getSubjectsByExamList(examId)
                 if (cached.isNotEmpty()) {
                     Result.success(cached.map { it.toModel() })
                 } else {
-                    Result.failure(Exception("Failed to fetch subjects: ${response.code()}"))
+                    Result.failure(Exception("Failed to fetch subjects and no cache available"))
                 }
             }
         } catch (e: Exception) {

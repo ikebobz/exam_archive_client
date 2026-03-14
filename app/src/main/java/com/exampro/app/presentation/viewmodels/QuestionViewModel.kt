@@ -8,6 +8,7 @@ import com.exampro.app.data.repository.ExamRepository
 import com.exampro.app.data.repository.QuestionRepository
 import com.exampro.app.data.repository.SubjectRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,28 +63,30 @@ class QuestionViewModel @Inject constructor(
     private val isBookmarksOnly: Boolean
         get() = _selectedSubjectId.value == -1
 
+    private var dataJob: Job? = null
+
     init {
-        initialize()
+        // Only initialize if we have a subjectId from SavedStateHandle (e.g. following a route)
+        // Otherwise wait for setSubjectId to be called (e.g. from Bookmarks route)
+        if (_selectedSubjectId.value != null) {
+            initialize()
+        }
         observeFilters()
     }
 
     private fun initialize() {
-        if (isBookmarksOnly) {
-            observeBookmarks()
-        } else {
-            loadMetadata()
-            loadQuestions()
-        }
-    }
-
-    private fun observeBookmarks() {
-        viewModelScope.launch {
-            questionRepository.getBookmarkedQuestionsFlow().collect { questions ->
-                _allQuestions.value = questions
-                updateMetadataAndFilters(questions)
-                // If we are in bookmarks mode, ensure the title is correct
+        dataJob?.cancel()
+        dataJob = viewModelScope.launch {
+            if (isBookmarksOnly) {
                 currentSubjectName = "Bookmarks"
                 currentExamName = null
+                questionRepository.getBookmarkedQuestionsFlow().collect { questions ->
+                    _allQuestions.value = questions
+                    updateMetadataAndFilters(questions)
+                }
+            } else {
+                loadMetadata()
+                loadQuestions()
             }
         }
     }
@@ -124,7 +127,6 @@ class QuestionViewModel @Inject constructor(
             ) { questions, query, difficulty, year ->
                 applyFilters(questions, query, difficulty, year)
             }.collect { filtered ->
-                // Only switch from Loading to Success if we have data or if it's bookmarks (which is local only)
                 if (_uiState.value !is QuestionUiState.Loading || isBookmarksOnly || filtered.isNotEmpty()) {
                     _uiState.value = QuestionUiState.Success(
                         questions = filtered,
@@ -221,7 +223,7 @@ class QuestionViewModel @Inject constructor(
 
     fun refresh() {
         if (isBookmarksOnly) {
-            // No refresh needed for bookmarks, it's a live flow from DB
+            // Bookmarks are live flow, but we could trigger a metadata update if needed
         } else {
             loadQuestions()
         }

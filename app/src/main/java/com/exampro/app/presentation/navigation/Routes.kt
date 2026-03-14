@@ -27,4 +27,5 @@ sealed class Routes(val route: String) {
             "quiz-result/$subjectId/$total/$correct"
     }
     object Profile : Routes("profile")
+    object Settings : Routes("settings")
 }

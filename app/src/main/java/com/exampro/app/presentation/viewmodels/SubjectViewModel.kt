@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -99,7 +98,6 @@ class SubjectViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _isSyncing.value = true
-            _errorMessage.value = null
             
             val examId = _selectedExamId.value
             val result = if (examId != null && examId != 0) {
@@ -110,6 +108,8 @@ class SubjectViewModel @Inject constructor(
             
             result.onFailure { e ->
                 _errorMessage.value = e.message ?: "Failed to load subjects"
+            }.onSuccess {
+                _errorMessage.value = null
             }
             _isSyncing.value = false
         }

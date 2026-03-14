@@ -20,6 +20,7 @@ import com.exampro.app.presentation.screens.question.QuestionDetailScreen
 import com.exampro.app.presentation.screens.question.QuestionListScreen
 import com.exampro.app.presentation.screens.quiz.QuizResultScreen
 import com.exampro.app.presentation.screens.quiz.QuizScreen
+import com.exampro.app.presentation.screens.settings.SettingsScreen
 import com.exampro.app.presentation.screens.subject.SubjectListScreen
 import com.exampro.app.presentation.viewmodels.AuthUiState
 import com.exampro.app.presentation.viewmodels.AuthViewModel
@@ -60,6 +61,9 @@ fun NavGraph(
                 onLogin = { email, password -> authViewModel.login(email, password) },
                 onNavigateToRegister = {
                     navController.navigate(Routes.Register.route)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Routes.Settings.route)
                 },
                 onLoginSuccess = {
                     navController.navigate(Routes.Dashboard.route) {
@@ -148,7 +152,6 @@ fun NavGraph(
                     if (purpose == "questions") {
                         navController.navigate(Routes.QuestionList.createRoute(subjectId))
                     } else {
-                        // Default behavior for other purposes
                         navController.navigate(Routes.QuestionList.createRoute(subjectId))
                     }
                 },
@@ -174,7 +177,7 @@ fun NavGraph(
 
         composable(Routes.Bookmarks.route) {
             QuestionListScreen(
-                subjectId = -1, // Use -1 to indicate Bookmarks
+                subjectId = -1,
                 onQuestionClick = { questionId ->
                     navController.navigate(Routes.QuestionDetail.createRoute(questionId))
                 },
@@ -245,6 +248,9 @@ fun NavGraph(
             ProfileScreen(
                 isDarkMode = isDarkMode,
                 onToggleDarkMode = onToggleDarkMode,
+                onNavigateToSettings = {
+                    navController.navigate(Routes.Settings.route)
+                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Routes.Login.route) {
@@ -253,6 +259,13 @@ fun NavGraph(
                 },
                 onBack = { navController.popBackStack() },
                 onHomeClick = onGoHome
+            )
+        }
+
+        composable(Routes.Settings.route) {
+            SettingsScreen(
+                onBackClick = { navController.popBackStack() },
+                //onHomeClick = onGoHome
             )
         }
     }

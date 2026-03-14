@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.exampro.app.data.api.AuthApi
 import com.exampro.app.data.api.DashboardApi
+import com.exampro.app.data.api.DynamicBaseUrlInterceptor
 import com.exampro.app.data.api.ExamApi
 import com.exampro.app.data.api.QuestionApi
 import com.exampro.app.data.api.SessionCookieInterceptor
@@ -66,9 +67,11 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         sessionCookieInterceptor: SessionCookieInterceptor,
-        loggingInterceptor: HttpLoggingInterceptor
+        loggingInterceptor: HttpLoggingInterceptor,
+        dynamicBaseUrlInterceptor: DynamicBaseUrlInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(dynamicBaseUrlInterceptor)
             .addInterceptor(sessionCookieInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(Constants.CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
