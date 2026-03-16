@@ -2,9 +2,6 @@ package com.exampro.app.di
 
 import android.content.SharedPreferences
 import com.exampro.app.data.api.AuthApi
-import com.exampro.app.data.api.ExamApi
-import com.exampro.app.data.api.QuestionApi
-import com.exampro.app.data.api.SubjectApi
 import com.exampro.app.data.db.AppDatabase
 import com.exampro.app.data.db.dao.ExamDao
 import com.exampro.app.data.db.dao.QuestionDao
@@ -38,28 +35,25 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideExamRepository(
-        examApi: ExamApi,
         examDao: ExamDao
     ): ExamRepository {
-        return ExamRepository(examApi, examDao)
+        return ExamRepository(examDao)
     }
 
     @Provides
     @Singleton
     fun provideSubjectRepository(
-        subjectApi: SubjectApi,
         subjectDao: SubjectDao
     ): SubjectRepository {
-        return SubjectRepository(subjectApi, subjectDao)
+        return SubjectRepository(subjectDao)
     }
 
     @Provides
     @Singleton
     fun provideQuestionRepository(
-        questionApi: QuestionApi,
         questionDao: QuestionDao
     ): QuestionRepository {
-        return QuestionRepository(questionApi, questionDao)
+        return QuestionRepository(questionDao)
     }
 
     @Provides

@@ -113,7 +113,7 @@ fun NavGraph(
                 onNavigateToProfile = {
                     navController.navigate(Routes.Profile.route)
                 },
-                onRetry = { dashboardViewModel.refresh() }
+                onRetry = { /* Manual refresh removed in prefetch mode */ }
             )
         }
 

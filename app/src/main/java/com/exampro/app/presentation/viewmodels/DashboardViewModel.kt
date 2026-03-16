@@ -7,15 +7,11 @@ import com.exampro.app.data.db.dao.SubjectDao
 import com.exampro.app.data.db.dao.QuestionDao
 import com.exampro.app.data.models.DashboardStats
 import com.exampro.app.data.repository.AuthRepository
-import com.exampro.app.data.repository.ExamRepository
-import com.exampro.app.data.repository.SubjectRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class DashboardUiState {
@@ -26,8 +22,6 @@ sealed class DashboardUiState {
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val examRepository: ExamRepository,
-    private val subjectRepository: SubjectRepository,
     private val examDao: ExamDao,
     private val subjectDao: SubjectDao,
     private val questionDao: QuestionDao,
@@ -51,19 +45,4 @@ class DashboardViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = DashboardUiState.Success(authRepository.getCachedStats())
     )
-
-    init {
-        refresh()
-    }
-
-    fun refresh() {
-        viewModelScope.launch {
-            try {
-                examRepository.refreshExams()
-                subjectRepository.refreshSubjects()
-            } catch (e: Exception) {
-                // Background refresh failed, UI continues to show local data
-            }
-        }
-    }
 }

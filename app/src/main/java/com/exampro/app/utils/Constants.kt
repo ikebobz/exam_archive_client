@@ -12,4 +12,5 @@ object Constants {
     const val CONNECT_TIMEOUT_SECONDS = 30L
     const val READ_TIMEOUT_SECONDS = 30L
     const val WRITE_TIMEOUT_SECONDS = 30L
+    const val DEFAULT_MAX_PREFETCH_QUESTIONS = 100
 }

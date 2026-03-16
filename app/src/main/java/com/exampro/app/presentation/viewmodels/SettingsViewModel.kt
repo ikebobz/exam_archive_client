@@ -15,6 +15,7 @@ import javax.inject.Inject
 
 data class SettingsUiState(
     val baseUrl: String = Constants.BASE_URL,
+    val maxPrefetch: Int = Constants.DEFAULT_MAX_PREFETCH_QUESTIONS,
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
     val error: String? = null
@@ -28,10 +29,13 @@ class SettingsViewModel @Inject constructor(
     val baseUrl: StateFlow<String> = settingsRepository.baseUrl
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Constants.BASE_URL)
 
+    val maxPrefetch: StateFlow<Int> = settingsRepository.maxPrefetch
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Constants.DEFAULT_MAX_PREFETCH_QUESTIONS)
+
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
-    fun updateBaseUrl(newUrl: String) {
+    fun updateSettings(newUrl: String, newMaxPrefetch: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, error = null, saveSuccess = false)
             try {
@@ -40,6 +44,10 @@ class SettingsViewModel @Inject constructor(
                 } else {
                     settingsRepository.updateBaseUrl(newUrl)
                 }
+                
+                val prefetchValue = newMaxPrefetch.toIntOrNull() ?: Constants.DEFAULT_MAX_PREFETCH_QUESTIONS
+                settingsRepository.updateMaxPrefetch(prefetchValue)
+
                 _uiState.value = _uiState.value.copy(isSaving = false, saveSuccess = true)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isSaving = false, error = e.message ?: "Failed to save settings")

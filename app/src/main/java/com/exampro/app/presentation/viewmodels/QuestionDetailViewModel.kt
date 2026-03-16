@@ -11,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -59,11 +60,8 @@ class QuestionDetailViewModel @Inject constructor(
                         }
                         
                         if (allQuestionsInSubject.isEmpty()) {
-                            val subjectResult = questionRepository.getQuestionsBySubject(question.subjectId)
-                            subjectResult.onSuccess { questions ->
+                            questionRepository.getQuestionsBySubjectFlow(question.subjectId).first().let { questions ->
                                 allQuestionsInSubject = questions
-                                updateUiState(question)
-                            }.onFailure {
                                 updateUiState(question)
                             }
                         } else {

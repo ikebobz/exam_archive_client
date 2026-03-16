@@ -7,8 +7,11 @@ import com.exampro.app.data.models.Exam
 import com.exampro.app.data.repository.ExamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,34 +27,14 @@ class ExamViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<ExamUiState>(ExamUiState.Loading)
-    val uiState: StateFlow<ExamUiState> = _uiState.asStateFlow()
-
     private val _purpose = MutableStateFlow(savedStateHandle.get<String>("purpose"))
     val purpose: StateFlow<String?> = _purpose.asStateFlow()
 
-    init {
-        observeExams()
-        refresh()
-    }
-
-    private fun observeExams() {
-        viewModelScope.launch {
-            examRepository.getExamsFlow().collect { exams ->
-                // If we have data, show it immediately and stop loading
-                if (exams.isNotEmpty() || _uiState.value !is ExamUiState.Loading) {
-                    _uiState.value = ExamUiState.Success(exams)
-                }
-            }
-        }
-    }
-
-    fun refresh() {
-        viewModelScope.launch {
-            val result = examRepository.refreshExams()
-            if (result.isFailure && _uiState.value is ExamUiState.Loading) {
-                _uiState.value = ExamUiState.Error(result.exceptionOrNull()?.message ?: "Failed to load exams")
-            }
-        }
-    }
+    val uiState: StateFlow<ExamUiState> = examRepository.getExamsFlow()
+        .map { ExamUiState.Success(it) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ExamUiState.Loading
+        )
 }

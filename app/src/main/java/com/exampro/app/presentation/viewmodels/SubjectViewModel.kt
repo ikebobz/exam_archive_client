@@ -37,8 +37,6 @@ class SubjectViewModel @Inject constructor(
     private val _selectedExamId = MutableStateFlow<Int?>(savedStateHandle.get<Int>("examId"))
     val selectedExamId: StateFlow<Int?> = _selectedExamId.asStateFlow()
 
-    private val _isSyncing = MutableStateFlow(false)
-    private val _errorMessage = MutableStateFlow<String?>(null)
     private val _examName = MutableStateFlow<String?>(null)
 
     private val _purpose = MutableStateFlow(savedStateHandle.get<String>("purpose"))
@@ -53,16 +51,8 @@ class SubjectViewModel @Inject constructor(
                 subjectRepository.getSubjectsFlow()
             }
         }
-        .combine(_examName) { subjects, examName -> subjects to examName }
-        .combine(_isSyncing) { (subjects, examName), syncing -> Triple(subjects, examName, syncing) }
-        .combine(_errorMessage) { (subjects, examName, syncing), error ->
-            if (error != null && subjects.isEmpty() && !syncing) {
-                SubjectUiState.Error(error)
-            } else if (subjects.isEmpty() && syncing) {
-                SubjectUiState.Loading
-            } else {
-                SubjectUiState.Success(subjects, examName)
-            }
+        .combine(_examName) { subjects, examName -> 
+            SubjectUiState.Success(subjects, examName)
         }
         .stateIn(
             scope = viewModelScope,
@@ -72,7 +62,6 @@ class SubjectViewModel @Inject constructor(
 
     init {
         loadExamName()
-        refresh()
     }
 
     private fun loadExamName() {
@@ -89,29 +78,7 @@ class SubjectViewModel @Inject constructor(
     fun setExamId(examId: Int) {
         if (_selectedExamId.value != examId) {
             _selectedExamId.value = examId
-            _errorMessage.value = null
             loadExamName()
-            refresh()
-        }
-    }
-
-    fun refresh() {
-        viewModelScope.launch {
-            _isSyncing.value = true
-            
-            val examId = _selectedExamId.value
-            val result = if (examId != null && examId != 0) {
-                subjectRepository.getSubjectsByExam(examId)
-            } else {
-                subjectRepository.refreshSubjects()
-            }
-            
-            result.onFailure { e ->
-                _errorMessage.value = e.message ?: "Failed to load subjects"
-            }.onSuccess {
-                _errorMessage.value = null
-            }
-            _isSyncing.value = false
         }
     }
 }

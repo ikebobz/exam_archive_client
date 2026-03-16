@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.exampro.app.utils.Constants
@@ -20,14 +21,25 @@ class SettingsRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val BASE_URL_KEY = stringPreferencesKey("base_url")
+    private val MAX_PREFETCH_KEY = intPreferencesKey("max_prefetch")
 
     val baseUrl: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[BASE_URL_KEY] ?: Constants.BASE_URL
     }
 
+    val maxPrefetch: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[MAX_PREFETCH_KEY] ?: Constants.DEFAULT_MAX_PREFETCH_QUESTIONS
+    }
+
     suspend fun updateBaseUrl(newBaseUrl: String) {
         context.dataStore.edit { preferences ->
             preferences[BASE_URL_KEY] = if (newBaseUrl.endsWith("/")) newBaseUrl else "$newBaseUrl/"
+        }
+    }
+
+    suspend fun updateMaxPrefetch(value: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[MAX_PREFETCH_KEY] = value
         }
     }
 

@@ -1,9 +1,6 @@
 package com.exampro.app.data.repository
 
-import com.exampro.app.data.api.QuestionApi
 import com.exampro.app.data.db.dao.QuestionDao
-import com.exampro.app.data.db.entities.AnswerEntity
-import com.exampro.app.data.db.entities.QuestionEntity
 import com.exampro.app.data.models.Answer
 import com.exampro.app.data.models.Question
 import kotlinx.coroutines.flow.Flow
@@ -13,7 +10,6 @@ import javax.inject.Singleton
 
 @Singleton
 class QuestionRepository @Inject constructor(
-    private val questionApi: QuestionApi,
     private val questionDao: QuestionDao
 ) {
     fun getBookmarkedQuestionsFlow(): Flow<List<Question>> {
@@ -31,75 +27,34 @@ class QuestionRepository @Inject constructor(
         }
     }
 
-    suspend fun refreshQuestions(): Result<List<Question>> {
-        return try {
-            val response = questionApi.getQuestions()
-            if (response.isSuccessful && response.body() != null) {
-                val allQuestions = response.body()!!
-                val bookmarkedIds = questionDao.getAllQuestionsList()
-                    .filter { it.isBookmarked }
-                    .map { it.id }.toSet()
-                val questionsWithBookmarks = allQuestions.map { 
-                    it.copy(isBookmarked = bookmarkedIds.contains(it.id))
-                }
-                Result.success(questionsWithBookmarks)
-            } else {
-                Result.failure(Exception("Failed to fetch questions: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getQuestionsBySubject(subjectId: Int): Result<List<Question>> {
-        return try {
-            val response = questionApi.getQuestions()
-            if (response.isSuccessful && response.body() != null) {
-                val allQuestions = response.body()!!
-                val filtered = allQuestions.filter { it.subjectId == subjectId }
-                val bookmarkedIds = questionDao.getAllQuestionsList()
-                    .filter { it.isBookmarked }
-                    .map { it.id }.toSet()
-                val questionsWithBookmarks = filtered.map { 
-                    it.copy(isBookmarked = bookmarkedIds.contains(it.id))
-                }
-                Result.success(questionsWithBookmarks)
-            } else {
-                Result.failure(Exception("Failed to fetch questions: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+    fun getQuestionsBySubjectFlow(subjectId: Int): Flow<List<Question>> {
+        return questionDao.getQuestionsBySubject(subjectId).map { entities ->
+            // Note: In a real app, you'd fetch answers here too if needed for the list view
+            entities.map { it.toModel() }
         }
     }
 
     suspend fun getQuestion(id: Int): Result<Question> {
-        return try {
-            val response = questionApi.getQuestion(id)
-            if (response.isSuccessful && response.body() != null) {
-                val question = response.body()!!
-                val existing = questionDao.getQuestionById(id)
-                val isBookmarked = existing?.isBookmarked ?: false
-                Result.success(question.copy(isBookmarked = isBookmarked))
-            } else {
-                val cached = getQuestionFromCache(id)
-                if (cached.isSuccess) cached else Result.failure(Exception("Question not found"))
-            }
-        } catch (e: Exception) {
-            val cached = getQuestionFromCache(id)
-            if (cached.isSuccess) cached else Result.failure(e)
+        val cached = questionDao.getQuestionById(id)
+        return if (cached != null) {
+            val answers = questionDao.getAnswersByQuestion(id)
+            Result.success(cached.toModel(answers.map { it.toModel() }))
+        } else {
+            Result.failure(Exception("Question not found in local database"))
         }
     }
 
     suspend fun toggleBookmark(question: Question): Boolean {
         val existing = questionDao.getQuestionById(question.id)
         return if (existing != null && existing.isBookmarked) {
-            // If it was only there because it was bookmarked, we can delete it.
-            // But if we use the table for general caching too, we might want to just update isBookmarked = false.
-            // Given the current implementation of toggleBookmark, it seems it deletes it.
-            questionDao.deleteAnswersByQuestion(question.id)
-            questionDao.deleteQuestionById(question.id)
+            // Update to false instead of deleting, as we want to keep the question if it was prefetched
+            questionDao.insertQuestion(existing.copy(isBookmarked = false))
             false
+        } else if (existing != null) {
+            questionDao.insertQuestion(existing.copy(isBookmarked = true))
+            true
         } else {
+            // This shouldn't happen with full prefetch, but for safety:
             questionDao.insertQuestion(question.toEntity(isBookmarked = true))
             question.answers?.let { answers ->
                 questionDao.insertAllAnswers(answers.map { it.toEntity() })
@@ -108,17 +63,7 @@ class QuestionRepository @Inject constructor(
         }
     }
 
-    private suspend fun getQuestionFromCache(id: Int): Result<Question> {
-        val cached = questionDao.getQuestionById(id)
-        return if (cached != null) {
-            val answers = questionDao.getAnswersByQuestion(id)
-            Result.success(cached.toModel(answers.map { it.toModel() }))
-        } else {
-            Result.failure(Exception("Question not found in cache"))
-        }
-    }
-
-    private fun Question.toEntity(isBookmarked: Boolean = false): QuestionEntity = QuestionEntity(
+    private fun Question.toEntity(isBookmarked: Boolean = false): com.exampro.app.data.db.entities.QuestionEntity = com.exampro.app.data.db.entities.QuestionEntity(
         id = id,
         subjectId = subjectId,
         questionText = questionText,
@@ -131,17 +76,7 @@ class QuestionRepository @Inject constructor(
         updatedAt = updatedAt ?: ""
     )
 
-    private fun Answer.toEntity(): AnswerEntity = AnswerEntity(
-        id = id,
-        questionId = questionId,
-        answerText = answerText,
-        isCorrect = isCorrect,
-        explanation = explanation,
-        createdAt = createdAt ?: "",
-        updatedAt = updatedAt ?: ""
-    )
-
-    private fun QuestionEntity.toModel(answers: List<Answer>? = null): Question = Question(
+    private fun com.exampro.app.data.db.entities.QuestionEntity.toModel(answers: List<Answer>? = null): Question = Question(
         id = id,
         subjectId = subjectId,
         questionText = questionText,
@@ -155,7 +90,7 @@ class QuestionRepository @Inject constructor(
         answers = answers
     )
 
-    private fun AnswerEntity.toModel(): Answer = Answer(
+    private fun com.exampro.app.data.db.entities.AnswerEntity.toModel(): Answer = Answer(
         id = id,
         questionId = questionId,
         answerText = answerText,
@@ -163,5 +98,15 @@ class QuestionRepository @Inject constructor(
         explanation = explanation,
         createdAt = createdAt,
         updatedAt = updatedAt
+    )
+    
+    private fun Answer.toEntity(): com.exampro.app.data.db.entities.AnswerEntity = com.exampro.app.data.db.entities.AnswerEntity(
+        id = id,
+        questionId = questionId,
+        answerText = answerText,
+        isCorrect = isCorrect,
+        explanation = explanation,
+        createdAt = createdAt ?: "",
+        updatedAt = updatedAt ?: ""
     )
 }

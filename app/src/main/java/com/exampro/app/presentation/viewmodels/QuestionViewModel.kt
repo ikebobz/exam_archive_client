@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -66,8 +67,6 @@ class QuestionViewModel @Inject constructor(
     private var dataJob: Job? = null
 
     init {
-        // Only initialize if we have a subjectId from SavedStateHandle (e.g. following a route)
-        // Otherwise wait for setSubjectId to be called (e.g. from Bookmarks route)
         if (_selectedSubjectId.value != null) {
             initialize()
         }
@@ -176,22 +175,19 @@ class QuestionViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = QuestionUiState.Loading
             val subjectId = _selectedSubjectId.value
-            val result = if (subjectId != null && subjectId != 0) {
-                questionRepository.getQuestionsBySubject(subjectId)
+            if (subjectId != null && subjectId != 0) {
+                questionRepository.getQuestionsBySubjectFlow(subjectId).first().let { questions ->
+                    _allQuestions.value = questions
+                    updateMetadataAndFilters(questions)
+                    _uiState.value = QuestionUiState.Success(
+                        questions = applyFilters(questions, _searchQuery.value, _selectedDifficulty.value, _selectedYear.value),
+                        examName = currentExamName,
+                        subjectName = currentSubjectName,
+                        isBookmarksOnly = false
+                    )
+                }
             } else {
-                questionRepository.refreshQuestions()
-            }
-            result.onSuccess { questions ->
-                _allQuestions.value = questions
-                updateMetadataAndFilters(questions)
-                _uiState.value = QuestionUiState.Success(
-                    questions = applyFilters(questions, _searchQuery.value, _selectedDifficulty.value, _selectedYear.value),
-                    examName = currentExamName,
-                    subjectName = currentSubjectName,
-                    isBookmarksOnly = false
-                )
-            }.onFailure { e ->
-                _uiState.value = QuestionUiState.Error(e.message ?: "Failed to load questions")
+                 _uiState.value = QuestionUiState.Error("No subject selected")
             }
         }
     }
@@ -222,9 +218,7 @@ class QuestionViewModel @Inject constructor(
     }
 
     fun refresh() {
-        if (isBookmarksOnly) {
-            // Bookmarks are live flow, but we could trigger a metadata update if needed
-        } else {
+        if (!isBookmarksOnly) {
             loadQuestions()
         }
     }

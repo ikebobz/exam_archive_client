@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exampro.app.presentation.components.TopBar
@@ -34,16 +36,20 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentBaseUrl by viewModel.baseUrl.collectAsState()
+    val currentMaxPrefetch by viewModel.maxPrefetch.collectAsState()
+    
     var urlInput by remember { mutableStateOf("") }
+    var maxPrefetchInput by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(currentBaseUrl) {
+    LaunchedEffect(currentBaseUrl, currentMaxPrefetch) {
         urlInput = currentBaseUrl
+        maxPrefetchInput = currentMaxPrefetch.toString()
     }
 
     LaunchedEffect(uiState.saveSuccess) {
         if (uiState.saveSuccess) {
-            snackbarHostState.showSnackbar("Settings saved. Please restart the app for changes to take full effect.")
+            snackbarHostState.showSnackbar("Settings saved. Changes will take effect on next startup.")
             viewModel.clearStatus()
         }
     }
@@ -76,13 +82,6 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Specify the base address for the API calls. Leave empty to use the default address.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
             OutlinedTextField(
                 value = urlInput,
                 onValueChange = { urlInput = it },
@@ -95,8 +94,31 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            Text(
+                text = "Data Prefetching",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Maximum number of questions to prefetch on startup.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = maxPrefetchInput,
+                onValueChange = { maxPrefetchInput = it },
+                label = { Text("Max Questions") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                enabled = !uiState.isSaving
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
             Button(
-                onClick = { viewModel.updateBaseUrl(urlInput) },
+                onClick = { viewModel.updateSettings(urlInput, maxPrefetchInput) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isSaving
             ) {
@@ -108,17 +130,6 @@ fun SettingsScreen(
                     )
                 }
                 Text("Save Settings")
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Button(
-                onClick = { urlInput = "" },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isSaving,
-                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors()
-            ) {
-                Text("Reset to Default")
             }
         }
     }

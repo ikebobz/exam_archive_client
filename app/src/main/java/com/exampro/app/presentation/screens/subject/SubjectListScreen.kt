@@ -60,7 +60,7 @@ fun SubjectListScreen(
         onSubjectClick = { subjectId -> onSubjectClick(subjectId, purpose) },
         onBackClick = onBackClick,
         onHomeClick = onHomeClick,
-        onRefresh = { viewModel.refresh() }
+        onRefresh = { /* Sync happens at startup */ }
     )
 }
 

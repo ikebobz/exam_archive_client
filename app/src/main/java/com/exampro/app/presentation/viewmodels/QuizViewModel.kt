@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -69,8 +70,8 @@ class QuizViewModel @Inject constructor(
         this.subjectId = subjectId
         viewModelScope.launch {
             _uiState.value = QuizUiState.Loading
-            val result = questionRepository.getQuestionsBySubject(subjectId)
-            result.onSuccess { questions ->
+            try {
+                val questions = questionRepository.getQuestionsBySubjectFlow(subjectId).first()
                 val shuffled = questions
                     .filter { !it.answers.isNullOrEmpty() }
                     .shuffled()
@@ -94,7 +95,7 @@ class QuizViewModel @Inject constructor(
                 elapsedSeconds = 0
 
                 _uiState.value = QuizUiState.Ready(totalQuestions = quizQuestions.size)
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 _uiState.value = QuizUiState.Error(e.message ?: "Failed to load quiz")
             }
         }
