@@ -167,8 +167,8 @@ fun NavGraph(
             val subjectId = backStackEntry.arguments?.getInt("subjectId") ?: 0
             QuestionListScreen(
                 subjectId = subjectId,
-                onQuestionClick = { questionId ->
-                    navController.navigate(Routes.QuestionDetail.createRoute(questionId))
+                onQuestionClick = { questionId, topic ->
+                    navController.navigate(Routes.QuestionDetail.createRoute(questionId, topic))
                 },
                 onBackClick = { navController.popBackStack() },
                 onHomeClick = onGoHome
@@ -178,8 +178,8 @@ fun NavGraph(
         composable(Routes.Bookmarks.route) {
             QuestionListScreen(
                 subjectId = -1,
-                onQuestionClick = { questionId ->
-                    navController.navigate(Routes.QuestionDetail.createRoute(questionId))
+                onQuestionClick = { questionId, topic ->
+                    navController.navigate(Routes.QuestionDetail.createRoute(questionId, topic))
                 },
                 onBackClick = { navController.popBackStack() },
                 onHomeClick = onGoHome
@@ -188,7 +188,14 @@ fun NavGraph(
 
         composable(
             route = Routes.QuestionDetail.route,
-            arguments = listOf(navArgument("questionId") { type = NavType.IntType })
+            arguments = listOf(
+                navArgument("questionId") { type = NavType.IntType },
+                navArgument("topic") { 
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) { backStackEntry ->
             val questionId = backStackEntry.arguments?.getInt("questionId") ?: 0
             QuestionDetailScreen(

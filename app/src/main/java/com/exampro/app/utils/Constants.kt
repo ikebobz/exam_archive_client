@@ -1,7 +1,8 @@
 package com.exampro.app.utils
 
 object Constants {
-    const val BASE_URL = "http://10.0.2.2:5000/"
+    //const val BASE_URL = "http://10.0.2.2:5000/"
+    const val BASE_URL = "https://exam-vault-782423551776.europe-west3.run.app/"
     const val SESSION_COOKIE_KEY = "connect.sid"
     const val COOKIE_PREFS_NAME = "cookie_prefs"
     const val COOKIE_PREFS_KEY = "session_cookie"

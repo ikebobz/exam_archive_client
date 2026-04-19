@@ -16,8 +16,9 @@ sealed class Routes(val route: String) {
         fun createRoute(subjectId: Int) = "subjects/$subjectId/questions"
     }
     object Bookmarks : Routes("bookmarks")
-    object QuestionDetail : Routes("questions/{questionId}") {
-        fun createRoute(questionId: Int) = "questions/$questionId"
+    object QuestionDetail : Routes("questions/{questionId}?topic={topic}") {
+        fun createRoute(questionId: Int, topic: String? = null) = 
+            "questions/$questionId" + (if (topic != null) "?topic=$topic" else "")
     }
     object Quiz : Routes("quiz/{subjectId}") {
         fun createRoute(subjectId: Int) = "quiz/$subjectId"

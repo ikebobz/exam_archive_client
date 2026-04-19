@@ -48,50 +48,19 @@ fun QuestionCard(
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                question.difficulty?.let { difficulty ->
-                    Badge(
-                        containerColor = when (difficulty.lowercase()) {
-                            "easy" -> MaterialTheme.colorScheme.tertiaryContainer
-                            "medium" -> MaterialTheme.colorScheme.secondaryContainer
-                            "hard" -> MaterialTheme.colorScheme.errorContainer
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        },
-                        contentColor = when (difficulty.lowercase()) {
-                            "easy" -> MaterialTheme.colorScheme.onTertiaryContainer
-                            "medium" -> MaterialTheme.colorScheme.onSecondaryContainer
-                            "hard" -> MaterialTheme.colorScheme.onErrorContainer
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    ) {
-                        Text(
-                            text = difficulty.replaceFirstChar { it.uppercase() },
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-                question.year?.let { year ->
+            
+            if (!question.topic.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Badge(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ) {
                         Text(
-                            text = "$year",
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-                question.topic?.let { topic ->
-                    Badge(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ) {
-                        Text(
-                            text = topic,
+                            text = question.topic,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }

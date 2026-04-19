@@ -8,12 +8,16 @@ import com.exampro.app.data.repository.ExamRepository
 import com.exampro.app.data.repository.QuestionRepository
 import com.exampro.app.data.repository.SubjectRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,166 +40,89 @@ class QuestionViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<QuestionUiState>(QuestionUiState.Loading)
-    val uiState: StateFlow<QuestionUiState> = _uiState.asStateFlow()
-
-    private val _allQuestions = MutableStateFlow<List<Question>>(emptyList())
-
-    private val _selectedSubjectId = MutableStateFlow<Int?>(savedStateHandle.get<Int>("subjectId"))
-    val selectedSubjectId: StateFlow<Int?> = _selectedSubjectId.asStateFlow()
+    private val _subjectId = MutableStateFlow<Int?>(savedStateHandle.get<Int>("subjectId"))
+    val selectedSubjectId: StateFlow<Int?> = _subjectId.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _selectedDifficulty = MutableStateFlow<String?>(null)
-    val selectedDifficulty: StateFlow<String?> = _selectedDifficulty.asStateFlow()
+    private val _selectedTopic = MutableStateFlow<String?>(null)
+    val selectedTopic: StateFlow<String?> = _selectedTopic.asStateFlow()
 
-    private val _selectedYear = MutableStateFlow<Int?>(null)
-    val selectedYear: StateFlow<Int?> = _selectedYear.asStateFlow()
+    private val _examName = MutableStateFlow<String?>(null)
+    private val _subjectName = MutableStateFlow<String?>(null)
 
-    private val _availableYears = MutableStateFlow<List<Int>>(emptyList())
-    val availableYears: StateFlow<List<Int>> = _availableYears.asStateFlow()
-
-    private val _availableDifficulties = MutableStateFlow<List<String>>(emptyList())
-    val availableDifficulties: StateFlow<List<String>> = _availableDifficulties.asStateFlow()
-
-    private var currentExamName: String? = null
-    private var currentSubjectName: String? = null
-    private val isBookmarksOnly: Boolean
-        get() = _selectedSubjectId.value == -1
-
-    private var dataJob: Job? = null
-
-    init {
-        if (_selectedSubjectId.value != null) {
-            initialize()
-        }
-        observeFilters()
-    }
-
-    private fun initialize() {
-        dataJob?.cancel()
-        dataJob = viewModelScope.launch {
-            if (isBookmarksOnly) {
-                currentSubjectName = "Bookmarks"
-                currentExamName = null
-                questionRepository.getBookmarkedQuestionsFlow().collect { questions ->
-                    _allQuestions.value = questions
-                    updateMetadataAndFilters(questions)
-                }
-            } else {
-                loadMetadata()
-                loadQuestions()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _allQuestions = _subjectId.flatMapLatest { id ->
+        when {
+            id == -1 -> {
+                _subjectName.value = "Bookmarks"
+                _examName.value = null
+                questionRepository.getBookmarkedQuestionsFlow()
             }
-        }
-    }
-
-    private fun loadMetadata() {
-        val subjectId = _selectedSubjectId.value
-        if (subjectId != null && subjectId != 0 && subjectId != -1) {
-            viewModelScope.launch {
-                subjectRepository.getSubject(subjectId).onSuccess { subject ->
-                    currentSubjectName = subject.name
-                    examRepository.getExam(subject.examId).onSuccess { exam ->
-                        currentExamName = exam.name
-                        updateSuccessStateIfReady()
-                    }
-                }
+            id != null && id != 0 -> {
+                loadMetadata(id)
+                questionRepository.getQuestionsBySubjectFlow(id)
             }
+            else -> flowOf(emptyList())
         }
-    }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private fun updateSuccessStateIfReady() {
-        val currentState = _uiState.value
-        if (currentState is QuestionUiState.Success) {
-            _uiState.value = currentState.copy(
-                examName = currentExamName,
-                subjectName = if (isBookmarksOnly) "Bookmarks" else currentSubjectName,
-                isBookmarksOnly = isBookmarksOnly
-            )
+    val availableTopics: StateFlow<List<String>> = _allQuestions
+        .map { questions ->
+            questions.mapNotNull { it.topic?.trim() }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .sortedBy { it.lowercase() }
         }
-    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private fun observeFilters() {
-        viewModelScope.launch {
-            combine(
-                _allQuestions,
-                _searchQuery,
-                _selectedDifficulty,
-                _selectedYear
-            ) { questions, query, difficulty, year ->
-                applyFilters(questions, query, difficulty, year)
-            }.collect { filtered ->
-                if (_uiState.value !is QuestionUiState.Loading || isBookmarksOnly || filtered.isNotEmpty()) {
-                    _uiState.value = QuestionUiState.Success(
-                        questions = filtered,
-                        examName = currentExamName,
-                        subjectName = if (isBookmarksOnly) "Bookmarks" else currentSubjectName,
-                        isBookmarksOnly = isBookmarksOnly
-                    )
-                }
-            }
-        }
-    }
-
-    private fun applyFilters(
-        questions: List<Question>,
-        query: String,
-        difficulty: String?,
-        year: Int?
-    ): List<Question> {
-        return questions.filter { question ->
+    val uiState: StateFlow<QuestionUiState> = combine(
+        _allQuestions,
+        _searchQuery,
+        _selectedTopic,
+        _examName,
+        _subjectName
+    ) { questions, query, topic, examName, subjectName ->
+        val filtered = questions.filter { question ->
             val matchesSearch = query.isBlank() ||
                 question.questionText.contains(query, ignoreCase = true) ||
                 (question.topic?.contains(query, ignoreCase = true) == true)
 
-            val matchesDifficulty = difficulty == null ||
-                question.difficulty.equals(difficulty, ignoreCase = true)
+            val matchesTopic = topic == null ||
+                question.topic?.trim()?.equals(topic.trim(), ignoreCase = true) == true
 
-            val matchesYear = year == null || question.year == year
-
-            matchesSearch && matchesDifficulty && matchesYear
+            matchesSearch && matchesTopic
         }
-    }
+        println("Filtered questions are : $filtered")
+        QuestionUiState.Success(
+            questions = filtered,
+            examName = examName,
+            subjectName = subjectName,
+            isBookmarksOnly = _subjectId.value == -1
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = QuestionUiState.Loading
+    )
 
-    private fun updateMetadataAndFilters(questions: List<Question>) {
-        _availableYears.value = questions
-            .mapNotNull { it.year }
-            .distinct()
-            .sorted()
-        _availableDifficulties.value = questions
-            .mapNotNull { it.difficulty }
-            .distinct()
-            .sorted()
-    }
-
-    fun loadQuestions() {
-        if (isBookmarksOnly) return
-        
+    private fun loadMetadata(subjectId: Int) {
         viewModelScope.launch {
-            _uiState.value = QuestionUiState.Loading
-            val subjectId = _selectedSubjectId.value
-            if (subjectId != null && subjectId != 0) {
-                questionRepository.getQuestionsBySubjectFlow(subjectId).first().let { questions ->
-                    _allQuestions.value = questions
-                    updateMetadataAndFilters(questions)
-                    _uiState.value = QuestionUiState.Success(
-                        questions = applyFilters(questions, _searchQuery.value, _selectedDifficulty.value, _selectedYear.value),
-                        examName = currentExamName,
-                        subjectName = currentSubjectName,
-                        isBookmarksOnly = false
-                    )
+            subjectRepository.getSubject(subjectId).onSuccess { subject ->
+                _subjectName.value = subject.name
+                examRepository.getExam(subject.examId).onSuccess { exam ->
+                    _examName.value = exam.name
                 }
-            } else {
-                 _uiState.value = QuestionUiState.Error("No subject selected")
             }
         }
     }
 
     fun setSubjectId(subjectId: Int) {
-        if (_selectedSubjectId.value != subjectId) {
-            _selectedSubjectId.value = subjectId
-            initialize()
+        if (_subjectId.value != subjectId) {
+            _subjectId.value = subjectId
+            _selectedTopic.value = null
+            _searchQuery.value = ""
         }
     }
 
@@ -203,23 +130,17 @@ class QuestionViewModel @Inject constructor(
         _searchQuery.value = query
     }
 
-    fun setDifficultyFilter(difficulty: String?) {
-        _selectedDifficulty.value = difficulty
-    }
-
-    fun setYearFilter(year: Int?) {
-        _selectedYear.value = year
+    fun setTopicFilter(topic: String?) {
+        val normalized = if (topic.isNullOrBlank()) null else topic.trim()
+        _selectedTopic.value = normalized
     }
 
     fun clearFilters() {
         _searchQuery.value = ""
-        _selectedDifficulty.value = null
-        _selectedYear.value = null
+        _selectedTopic.value = null
     }
 
     fun refresh() {
-        if (!isBookmarksOnly) {
-            loadQuestions()
-        }
+        // Data is reactive from local DB
     }
 }

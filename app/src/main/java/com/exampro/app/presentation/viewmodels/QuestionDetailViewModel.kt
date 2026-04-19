@@ -36,7 +36,8 @@ class QuestionDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var questionId: Int = savedStateHandle.get<Int>("questionId") ?: -1
-    private var allQuestionsInSubject: List<Question> = emptyList()
+    private val topicFilter: String? = savedStateHandle.get<String>("topic")
+    private var allQuestionsInContext: List<Question> = emptyList()
 
     private val _uiState = MutableStateFlow<QuestionDetailUiState>(QuestionDetailUiState.Loading)
     val uiState: StateFlow<QuestionDetailUiState> = _uiState.asStateFlow()
@@ -59,9 +60,14 @@ class QuestionDetailViewModel @Inject constructor(
                             loadMetadata(question.subjectId)
                         }
                         
-                        if (allQuestionsInSubject.isEmpty()) {
+                        if (allQuestionsInContext.isEmpty()) {
                             questionRepository.getQuestionsBySubjectFlow(question.subjectId).first().let { questions ->
-                                allQuestionsInSubject = questions
+                                // Filter questions if a topic filter is provided
+                                allQuestionsInContext = if (topicFilter != null) {
+                                    questions.filter { it.topic?.trim()?.equals(topicFilter.trim(), ignoreCase = true) == true }
+                                } else {
+                                    questions
+                                }
                                 updateUiState(question)
                             }
                         } else {
@@ -101,10 +107,10 @@ class QuestionDetailViewModel @Inject constructor(
     }
 
     private fun updateUiState(question: Question) {
-        val currentIndex = allQuestionsInSubject.indexOfFirst { it.id == question.id }
+        val currentIndex = allQuestionsInContext.indexOfFirst { it.id == question.id }
         _uiState.value = QuestionDetailUiState.Success(
             question = question,
-            hasNext = currentIndex != -1 && currentIndex < allQuestionsInSubject.size - 1,
+            hasNext = currentIndex != -1 && currentIndex < allQuestionsInContext.size - 1,
             hasPrevious = currentIndex > 0,
             examName = currentExamName,
             subjectName = currentSubjectName
@@ -118,8 +124,8 @@ class QuestionDetailViewModel @Inject constructor(
                 val newStatus = questionRepository.toggleBookmark(state.question)
                 _uiState.value = state.copy(question = state.question.copy(isBookmarked = newStatus))
                 
-                // Also update the status in our list to keep navigation consistent
-                allQuestionsInSubject = allQuestionsInSubject.map {
+                // Also update the status in our context list to keep navigation consistent
+                allQuestionsInContext = allQuestionsInContext.map {
                     if (it.id == state.question.id) it.copy(isBookmarked = newStatus) else it
                 }
             }
@@ -127,17 +133,17 @@ class QuestionDetailViewModel @Inject constructor(
     }
 
     fun navigateToNext() {
-        val currentIndex = allQuestionsInSubject.indexOfFirst { it.id == questionId }
-        if (currentIndex != -1 && currentIndex < allQuestionsInSubject.size - 1) {
-            questionId = allQuestionsInSubject[currentIndex + 1].id
+        val currentIndex = allQuestionsInContext.indexOfFirst { it.id == questionId }
+        if (currentIndex != -1 && currentIndex < allQuestionsInContext.size - 1) {
+            questionId = allQuestionsInContext[currentIndex + 1].id
             loadQuestion()
         }
     }
 
     fun navigateToPrevious() {
-        val currentIndex = allQuestionsInSubject.indexOfFirst { it.id == questionId }
+        val currentIndex = allQuestionsInContext.indexOfFirst { it.id == questionId }
         if (currentIndex > 0) {
-            questionId = allQuestionsInSubject[currentIndex - 1].id
+            questionId = allQuestionsInContext[currentIndex - 1].id
             loadQuestion()
         }
     }

@@ -3,8 +3,6 @@ package com.exampro.app.presentation.screens.question
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,8 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -31,7 +33,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.exampro.app.presentation.components.ErrorMessage
-import com.exampro.app.presentation.components.FilterChipItem
 import com.exampro.app.presentation.components.QuestionCard
 import com.exampro.app.presentation.components.SearchBar
 import com.exampro.app.presentation.components.TopBar
@@ -40,22 +41,21 @@ import com.exampro.app.presentation.viewmodels.QuestionViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuestionListScreen(
     subjectId: Int,
-    onQuestionClick: (Int) -> Unit,
+    onQuestionClick: (Int, String?) -> Unit,
     onBackClick: () -> Unit,
     onHomeClick: (() -> Unit)? = null,
     viewModel: QuestionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-    val selectedDifficulty by viewModel.selectedDifficulty.collectAsState()
-    val selectedYear by viewModel.selectedYear.collectAsState()
-    val availableYears by viewModel.availableYears.collectAsState()
-    val availableDifficulties by viewModel.availableDifficulties.collectAsState()
+    val selectedTopic by viewModel.selectedTopic.collectAsState()
+    val availableTopics by viewModel.availableTopics.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(subjectId) {
@@ -123,36 +123,46 @@ fun QuestionListScreen(
                             placeholder = "Search questions..."
                         )
 
-                        if (availableDifficulties.isNotEmpty() || availableYears.isNotEmpty()) {
-                            FlowRow(
+                        if (availableTopics.isNotEmpty()) {
+                            ExposedDropdownMenuBox(
+                                expanded = expanded,
+                                onExpandedChange = { expanded = !expanded },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
                             ) {
-                                availableDifficulties.forEach { difficulty ->
-                                    FilterChipItem(
-                                        label = difficulty.replaceFirstChar { it.uppercase() },
-                                        selected = selectedDifficulty == difficulty,
+                                OutlinedTextField(
+                                    value = selectedTopic ?: "All Topics",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Filter by Topic") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                                    modifier = Modifier
+                                        .menuAnchor()
+                                        .fillMaxWidth()
+                                )
+
+                                ExposedDropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("All Topics") },
                                         onClick = {
-                                            viewModel.setDifficultyFilter(
-                                                if (selectedDifficulty == difficulty) null
-                                                else difficulty
-                                            )
+                                            viewModel.setTopicFilter(null)
+                                            expanded = false
                                         }
                                     )
-                                }
-                                availableYears.forEach { year ->
-                                    FilterChipItem(
-                                        label = "$year",
-                                        selected = selectedYear == year,
-                                        onClick = {
-                                            viewModel.setYearFilter(
-                                                if (selectedYear == year) null else year
-                                            )
-                                        }
-                                    )
+                                    availableTopics.forEach { topic ->
+                                        DropdownMenuItem(
+                                            text = { Text(topic) },
+                                            onClick = {
+                                                viewModel.setTopicFilter(topic)
+                                                expanded = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -165,7 +175,7 @@ fun QuestionListScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = if (searchQuery.isNotEmpty() || selectedDifficulty != null || selectedYear != null)
+                                    text = if (searchQuery.isNotEmpty() || selectedTopic != null)
                                         "No questions match your filters"
                                     else
                                         "No questions available",
@@ -185,7 +195,7 @@ fun QuestionListScreen(
                                 ) { question ->
                                     QuestionCard(
                                         question = question,
-                                        onClick = { onQuestionClick(question.id) }
+                                        onClick = { onQuestionClick(question.id, selectedTopic) }
                                     )
                                 }
                             }
