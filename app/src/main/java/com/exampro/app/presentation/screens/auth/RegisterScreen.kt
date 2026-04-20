@@ -98,7 +98,7 @@ fun RegisterScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Join ExamPro",
+                text = "Join ExamVault",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary
             )

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -41,6 +42,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -102,38 +104,44 @@ fun QuestionDetailScreen(
         bottomBar = {
             if (uiState is QuestionDetailUiState.Success) {
                 val state = uiState as QuestionDetailUiState.Success
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Surface(
+                    tonalElevation = 3.dp,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.navigationBarsPadding()
                 ) {
-                    OutlinedButton(
-                        onClick = { 
-                            viewModel.navigateToPrevious()
-                            showExplanation = false
-                            selectedAnswerId = null
-                        },
-                        enabled = state.hasPrevious,
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Previous")
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Button(
-                        onClick = { 
-                            viewModel.navigateToNext()
-                            showExplanation = false
-                            selectedAnswerId = null
-                        },
-                        enabled = state.hasNext,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Next")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = null)
+                        OutlinedButton(
+                            onClick = { 
+                                viewModel.navigateToPrevious()
+                                showExplanation = false
+                                selectedAnswerId = null
+                            },
+                            enabled = state.hasPrevious,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = null)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Previous")
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Button(
+                            onClick = { 
+                                viewModel.navigateToNext()
+                                showExplanation = false
+                                selectedAnswerId = null
+                            },
+                            enabled = state.hasNext,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Next")
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = null)
+                        }
                     }
                 }
             }
@@ -320,6 +328,9 @@ fun QuestionDetailScreen(
                             }
                         }
                     }
+                    
+                    // Extra spacing at the bottom to ensure content isn't obscured by the elevated bottom bar
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
         }

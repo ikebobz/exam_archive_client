@@ -136,7 +136,7 @@ fun LoadingSplashScreen(onOpenSettings: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "ExamPro",
+                text = "ExamVault",
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.primary
             )

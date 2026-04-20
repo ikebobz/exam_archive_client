@@ -11,14 +11,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface QuestionDao {
-    @Query("SELECT * FROM questions WHERE isBookmarked = 1 ORDER BY id DESC")
-    fun getBookmarkedQuestions(): Flow<List<QuestionEntity>>
-
     @Query("SELECT * FROM questions ORDER BY id DESC")
     fun getAllQuestions(): Flow<List<QuestionEntity>>
 
     @Query("SELECT * FROM questions ORDER BY id DESC")
     suspend fun getAllQuestionsList(): List<QuestionEntity>
+
+    @Query("SELECT * FROM questions WHERE isBookmarked = 1")
+    fun getBookmarkedQuestions(): Flow<List<QuestionEntity>>
 
     @Query("SELECT * FROM questions WHERE subjectId = :subjectId ORDER BY id DESC")
     fun getQuestionsBySubject(subjectId: Int): Flow<List<QuestionEntity>>

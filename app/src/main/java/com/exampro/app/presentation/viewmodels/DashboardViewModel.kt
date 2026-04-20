@@ -7,6 +7,7 @@ import com.exampro.app.data.db.dao.SubjectDao
 import com.exampro.app.data.db.dao.QuestionDao
 import com.exampro.app.data.models.DashboardStats
 import com.exampro.app.data.repository.AuthRepository
+import com.exampro.app.data.repository.QuestionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,14 +25,14 @@ sealed class DashboardUiState {
 class DashboardViewModel @Inject constructor(
     private val examDao: ExamDao,
     private val subjectDao: SubjectDao,
-    private val questionDao: QuestionDao,
+    private val questionRepository: QuestionRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<DashboardUiState> = combine(
         examDao.getAllExams(),
         subjectDao.getAllSubjects(),
-        questionDao.getBookmarkedQuestions()
+        questionRepository.getBookmarkedQuestionsFlow()
     ) { exams, subjects, bookmarkedQuestions ->
         val stats = DashboardStats(
             totalExams = exams.size,

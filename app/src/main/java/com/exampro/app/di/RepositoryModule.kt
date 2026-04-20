@@ -3,6 +3,7 @@ package com.exampro.app.di
 import android.content.SharedPreferences
 import com.exampro.app.data.api.AuthApi
 import com.exampro.app.data.db.AppDatabase
+import com.exampro.app.data.db.dao.BookmarkDao
 import com.exampro.app.data.db.dao.ExamDao
 import com.exampro.app.data.db.dao.QuestionDao
 import com.exampro.app.data.db.dao.StudyProgressDao
@@ -51,9 +52,11 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideQuestionRepository(
-        questionDao: QuestionDao
+        questionDao: QuestionDao,
+        bookmarkDao: BookmarkDao,
+        authRepository: AuthRepository
     ): QuestionRepository {
-        return QuestionRepository(questionDao)
+        return QuestionRepository(questionDao, bookmarkDao, authRepository)
     }
 
     @Provides

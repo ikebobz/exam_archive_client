@@ -3,6 +3,7 @@ package com.exampro.app.di
 import android.content.Context
 import androidx.room.Room
 import com.exampro.app.data.db.AppDatabase
+import com.exampro.app.data.db.dao.BookmarkDao
 import com.exampro.app.data.db.dao.ExamDao
 import com.exampro.app.data.db.dao.QuestionDao
 import com.exampro.app.data.db.dao.StudyProgressDao
@@ -53,5 +54,11 @@ object DatabaseModule {
     @Singleton
     fun provideStudyProgressDao(database: AppDatabase): StudyProgressDao {
         return database.studyProgressDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideBookmarkDao(database: AppDatabase): BookmarkDao {
+        return database.bookmarkDao()
     }
 }

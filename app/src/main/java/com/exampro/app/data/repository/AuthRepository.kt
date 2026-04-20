@@ -8,6 +8,7 @@ import com.exampro.app.data.models.DashboardStats
 import com.exampro.app.data.models.LoginRequest
 import com.exampro.app.data.models.RegisterRequest
 import com.exampro.app.data.models.UserProfile
+import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -34,10 +35,27 @@ class AuthRepository @Inject constructor(
                 saveSession(authResponse.user.id, authResponse.user.email)
                 Result.success(authResponse)
             } else {
-                Result.failure(Exception("Login failed: ${response.code()} ${response.message()}"))
+                val errorMsg = when (response.code()) {
+                    401 -> "Invalid credentials. Please check your email and password."
+                    404 -> "Account not found. Please register first."
+                    500 -> "Server error. Please try again later."
+                    else -> {
+                        // 2. Fallback: If it's not a common error, try to read the server message
+                        try {
+                            val errorBody = response.errorBody()?.string()
+                            val json = JSONObject(errorBody ?: "{}")
+                            json.optString("message", "Login failed. Please try again.")
+                        } catch (e: Exception) {
+                            "Login failed. Please try again."
+                        }
+                    }
+                }
+                Result.failure(Exception(errorMsg))
             }
+        } catch (e: java.net.ConnectException) {
+            Result.failure(Exception("Could not connect to the server. Please check your IP settings and internet connection."))
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception("Service is unreachable, please retry again later!!"))
         }
     }
 
@@ -49,7 +67,14 @@ class AuthRepository @Inject constructor(
                 saveSession(authResponse.user.id, authResponse.user.email)
                 Result.success(authResponse)
             } else {
-                Result.failure(Exception("Registration failed: ${response.code()} ${response.message()}"))
+                val errorMsg = try {
+                    val errorBody = response.errorBody()?.string()
+                    val json = JSONObject(errorBody ?: "{}")
+                    json.optString("message", "Registration failed. Please check your details.")
+                } catch (e: Exception) {
+                    "Registration failed. Email might already be in use."
+                }
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -60,7 +85,6 @@ class AuthRepository @Inject constructor(
         return try {
             authApi.logout()
             clearSession()
-            // We don't clear the database here to preserve data across logout/login as requested
             Result.success(Unit)
         } catch (e: Exception) {
             clearSession()
@@ -74,7 +98,7 @@ class AuthRepository @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Failed to get profile: ${response.code()}"))
+                Result.failure(Exception("Failed to get profile"))
             }
         } catch (e: Exception) {
             Result.failure(e)
