@@ -89,4 +89,7 @@ class AuthViewModel @Inject constructor(
             _uiState.value = AuthUiState.Unauthenticated
         }
     }
+
+    fun getLastEmail(): String = authRepository.getLastEmail() ?: ""
+    fun getLastPassword(): String = authRepository.getLastPassword() ?: ""
 }

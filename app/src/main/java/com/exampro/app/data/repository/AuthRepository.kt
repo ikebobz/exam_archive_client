@@ -22,6 +22,8 @@ class AuthRepository @Inject constructor(
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_USER_EMAIL = "user_email"
+        private const val KEY_LAST_EMAIL = "last_email"
+        private const val KEY_LAST_PASSWORD = "last_password"
         private const val KEY_TOTAL_EXAMS = "total_exams"
         private const val KEY_TOTAL_SUBJECTS = "total_subjects"
         private const val KEY_TOTAL_QUESTIONS = "total_questions"
@@ -33,6 +35,7 @@ class AuthRepository @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 val authResponse = response.body()!!
                 saveSession(authResponse.user.id, authResponse.user.email)
+                saveCredentials(email, password)
                 Result.success(authResponse)
             } else {
                 val errorMsg = when (response.code()) {
@@ -40,7 +43,6 @@ class AuthRepository @Inject constructor(
                     404 -> "Account not found. Please register first."
                     500 -> "Server error. Please try again later."
                     else -> {
-                        // 2. Fallback: If it's not a common error, try to read the server message
                         try {
                             val errorBody = response.errorBody()?.string()
                             val json = JSONObject(errorBody ?: "{}")
@@ -65,6 +67,7 @@ class AuthRepository @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 val authResponse = response.body()!!
                 saveSession(authResponse.user.id, authResponse.user.email)
+                saveCredentials(email, password)
                 Result.success(authResponse)
             } else {
                 val errorMsg = try {
@@ -117,11 +120,26 @@ class AuthRepository @Inject constructor(
         return sharedPreferences.getString(KEY_USER_EMAIL, null)
     }
 
+    fun getLastEmail(): String? {
+        return sharedPreferences.getString(KEY_LAST_EMAIL, null)
+    }
+
+    fun getLastPassword(): String? {
+        return sharedPreferences.getString(KEY_LAST_PASSWORD, null)
+    }
+
     private fun saveSession(userId: String, email: String) {
         sharedPreferences.edit()
             .putBoolean(KEY_IS_LOGGED_IN, true)
             .putString(KEY_USER_ID, userId)
             .putString(KEY_USER_EMAIL, email)
+            .apply()
+    }
+
+    private fun saveCredentials(email: String, password: String) {
+        sharedPreferences.edit()
+            .putString(KEY_LAST_EMAIL, email)
+            .putString(KEY_LAST_PASSWORD, password)
             .apply()
     }
 

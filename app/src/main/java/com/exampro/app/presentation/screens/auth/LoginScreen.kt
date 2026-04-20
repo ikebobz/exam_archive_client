@@ -53,13 +53,15 @@ sealed class LoginUiState {
 @Composable
 fun LoginScreen(
     uiState: LoginUiState = LoginUiState.Idle,
+    initialEmail: String = "",
+    initialPassword: String = "",
     onLogin: (email: String, password: String) -> Unit,
     onNavigateToRegister: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
     onLoginSuccess: () -> Unit = {}
 ) {
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf(initialEmail) }
+    var password by rememberSaveable { mutableStateOf(initialPassword) }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 

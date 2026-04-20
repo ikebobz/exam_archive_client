@@ -58,6 +58,8 @@ fun NavGraph(
             }
             LoginScreen(
                 uiState = loginState,
+                initialEmail = authViewModel.getLastEmail(),
+                initialPassword = authViewModel.getLastPassword(),
                 onLogin = { email, password -> authViewModel.login(email, password) },
                 onNavigateToRegister = {
                     navController.navigate(Routes.Register.route)
