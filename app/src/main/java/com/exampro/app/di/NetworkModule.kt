@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.exampro.app.data.api.AuthApi
 import com.exampro.app.data.api.DashboardApi
+import com.exampro.app.data.api.DeviceApi
 import com.exampro.app.data.api.DynamicBaseUrlInterceptor
 import com.exampro.app.data.api.ExamApi
 import com.exampro.app.data.api.QuestionApi
@@ -118,5 +119,11 @@ object NetworkModule {
     @Singleton
     fun provideDashboardApi(retrofit: Retrofit): DashboardApi {
         return retrofit.create(DashboardApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDeviceApi(retrofit: Retrofit): DeviceApi {
+        return retrofit.create(DeviceApi::class.java)
     }
 }

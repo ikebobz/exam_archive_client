@@ -1,9 +1,14 @@
 package com.exampro.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +38,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.exampro.app.presentation.navigation.NavGraph
 import com.exampro.app.presentation.screens.settings.SettingsScreen
@@ -60,6 +67,9 @@ class MainActivity : ComponentActivity() {
             var showSettingsInSplash by remember { mutableStateOf(false) }
 
             ExamProTheme(darkTheme = isDarkMode) {
+                // Request Notification Permission for Android 13+
+                RequestNotificationPermission()
+
                 if (showSettingsInSplash) {
                     SettingsScreen(
                         onBackClick = { showSettingsInSplash = false }
@@ -98,6 +108,28 @@ class MainActivity : ComponentActivity() {
                             MainContent(isDarkMode = isDarkMode, onToggleDarkMode = { isDarkMode = it })
                         }
                     }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun RequestNotificationPermission() {
+        val context = LocalContext.current
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val launcher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                // Handle permission result if needed
+            }
+
+            LaunchedEffect(Unit) {
+                if (ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
         }

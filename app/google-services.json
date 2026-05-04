@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "596220383020",
+    "project_id": "device-streaming-46e6f859",
+    "storage_bucket": "device-streaming-46e6f859.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:596220383020:android:7301bfcfe52543e375a689",
+        "android_client_info": {
+          "package_name": "com.exampro.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAD5PRgb10kiVqkm_GzX9et74tuzK0aRdA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
