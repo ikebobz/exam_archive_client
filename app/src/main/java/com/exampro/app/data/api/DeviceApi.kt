@@ -1,11 +1,12 @@
 package com.exampro.app.data.api
 
+import com.google.gson.annotations.SerializedName
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
 
 data class DeviceRegistrationRequest(
-    val token: String,
+    @SerializedName("deviceToken") val token: String,
     val platform: String = "android"
 )
 
