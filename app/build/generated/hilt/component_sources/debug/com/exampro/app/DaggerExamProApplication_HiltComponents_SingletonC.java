@@ -535,13 +535,13 @@ public final class DaggerExamProApplication_HiltComponents_SingletonC {
           return (T) new AuthViewModel(singletonCImpl.provideAuthRepositoryProvider.get());
 
           case 1: // com.exampro.app.presentation.viewmodels.DashboardViewModel 
-          return (T) new DashboardViewModel(singletonCImpl.provideExamDaoProvider.get(), singletonCImpl.provideSubjectDaoProvider.get(), singletonCImpl.provideQuestionRepositoryProvider.get(), singletonCImpl.provideAuthRepositoryProvider.get());
+          return (T) new DashboardViewModel(singletonCImpl.provideExamDaoProvider.get(), singletonCImpl.provideSubjectDaoProvider.get(), singletonCImpl.provideQuestionRepositoryProvider.get(), singletonCImpl.provideAuthRepositoryProvider.get(), singletonCImpl.syncRepositoryProvider.get());
 
           case 2: // com.exampro.app.presentation.viewmodels.ExamViewModel 
           return (T) new ExamViewModel(singletonCImpl.provideExamRepositoryProvider.get(), viewModelCImpl.savedStateHandle);
 
           case 3: // com.exampro.app.presentation.viewmodels.MainViewModel 
-          return (T) new MainViewModel(singletonCImpl.syncRepositoryProvider.get());
+          return (T) new MainViewModel(singletonCImpl.syncRepositoryProvider.get(), singletonCImpl.provideDeviceApiProvider.get());
 
           case 4: // com.exampro.app.presentation.viewmodels.QuestionDetailViewModel 
           return (T) new QuestionDetailViewModel(singletonCImpl.provideQuestionRepositoryProvider.get(), singletonCImpl.provideSubjectRepositoryProvider.get(), singletonCImpl.provideExamRepositoryProvider.get(), viewModelCImpl.savedStateHandle);
@@ -667,6 +667,8 @@ public final class DaggerExamProApplication_HiltComponents_SingletonC {
 
     private Provider<AuthApi> provideAuthApiProvider;
 
+    private Provider<DeviceApi> provideDeviceApiProvider;
+
     private Provider<SharedPreferences> provideAuthPreferencesProvider;
 
     private Provider<AppDatabase> provideAppDatabaseProvider;
@@ -683,8 +685,6 @@ public final class DaggerExamProApplication_HiltComponents_SingletonC {
 
     private Provider<QuestionRepository> provideQuestionRepositoryProvider;
 
-    private Provider<ExamRepository> provideExamRepositoryProvider;
-
     private Provider<ExamApi> provideExamApiProvider;
 
     private Provider<SubjectApi> provideSubjectApiProvider;
@@ -693,13 +693,13 @@ public final class DaggerExamProApplication_HiltComponents_SingletonC {
 
     private Provider<SyncRepository> syncRepositoryProvider;
 
+    private Provider<ExamRepository> provideExamRepositoryProvider;
+
     private Provider<SubjectRepository> provideSubjectRepositoryProvider;
 
     private Provider<StudyProgressDao> provideStudyProgressDaoProvider;
 
     private Provider<StudyProgressRepository> provideStudyProgressRepositoryProvider;
-
-    private Provider<DeviceApi> provideDeviceApiProvider;
 
     private SingletonCImpl(ApplicationContextModule applicationContextModuleParam) {
       this.applicationContextModule = applicationContextModuleParam;
@@ -717,23 +717,23 @@ public final class DaggerExamProApplication_HiltComponents_SingletonC {
       this.provideOkHttpClientProvider = DoubleCheck.provider(new SwitchingProvider<OkHttpClient>(singletonCImpl, 3));
       this.provideRetrofitProvider = DoubleCheck.provider(new SwitchingProvider<Retrofit>(singletonCImpl, 2));
       this.provideAuthApiProvider = DoubleCheck.provider(new SwitchingProvider<AuthApi>(singletonCImpl, 1));
-      this.provideAuthPreferencesProvider = DoubleCheck.provider(new SwitchingProvider<SharedPreferences>(singletonCImpl, 9));
-      this.provideAppDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<AppDatabase>(singletonCImpl, 10));
+      this.provideDeviceApiProvider = DoubleCheck.provider(new SwitchingProvider<DeviceApi>(singletonCImpl, 9));
+      this.provideAuthPreferencesProvider = DoubleCheck.provider(new SwitchingProvider<SharedPreferences>(singletonCImpl, 10));
+      this.provideAppDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<AppDatabase>(singletonCImpl, 11));
       this.provideAuthRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<AuthRepository>(singletonCImpl, 0));
-      this.provideExamDaoProvider = DoubleCheck.provider(new SwitchingProvider<ExamDao>(singletonCImpl, 11));
-      this.provideSubjectDaoProvider = DoubleCheck.provider(new SwitchingProvider<SubjectDao>(singletonCImpl, 12));
-      this.provideQuestionDaoProvider = DoubleCheck.provider(new SwitchingProvider<QuestionDao>(singletonCImpl, 14));
-      this.provideBookmarkDaoProvider = DoubleCheck.provider(new SwitchingProvider<BookmarkDao>(singletonCImpl, 15));
-      this.provideQuestionRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<QuestionRepository>(singletonCImpl, 13));
-      this.provideExamRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<ExamRepository>(singletonCImpl, 16));
+      this.provideExamDaoProvider = DoubleCheck.provider(new SwitchingProvider<ExamDao>(singletonCImpl, 12));
+      this.provideSubjectDaoProvider = DoubleCheck.provider(new SwitchingProvider<SubjectDao>(singletonCImpl, 13));
+      this.provideQuestionDaoProvider = DoubleCheck.provider(new SwitchingProvider<QuestionDao>(singletonCImpl, 15));
+      this.provideBookmarkDaoProvider = DoubleCheck.provider(new SwitchingProvider<BookmarkDao>(singletonCImpl, 16));
+      this.provideQuestionRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<QuestionRepository>(singletonCImpl, 14));
       this.provideExamApiProvider = DoubleCheck.provider(new SwitchingProvider<ExamApi>(singletonCImpl, 18));
       this.provideSubjectApiProvider = DoubleCheck.provider(new SwitchingProvider<SubjectApi>(singletonCImpl, 19));
       this.provideQuestionApiProvider = DoubleCheck.provider(new SwitchingProvider<QuestionApi>(singletonCImpl, 20));
       this.syncRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<SyncRepository>(singletonCImpl, 17));
-      this.provideSubjectRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<SubjectRepository>(singletonCImpl, 21));
-      this.provideStudyProgressDaoProvider = DoubleCheck.provider(new SwitchingProvider<StudyProgressDao>(singletonCImpl, 23));
-      this.provideStudyProgressRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<StudyProgressRepository>(singletonCImpl, 22));
-      this.provideDeviceApiProvider = DoubleCheck.provider(new SwitchingProvider<DeviceApi>(singletonCImpl, 24));
+      this.provideExamRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<ExamRepository>(singletonCImpl, 21));
+      this.provideSubjectRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<SubjectRepository>(singletonCImpl, 22));
+      this.provideStudyProgressDaoProvider = DoubleCheck.provider(new SwitchingProvider<StudyProgressDao>(singletonCImpl, 24));
+      this.provideStudyProgressRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<StudyProgressRepository>(singletonCImpl, 23));
     }
 
     @Override
@@ -770,7 +770,7 @@ public final class DaggerExamProApplication_HiltComponents_SingletonC {
       public T get() {
         switch (id) {
           case 0: // com.exampro.app.data.repository.AuthRepository 
-          return (T) RepositoryModule_ProvideAuthRepositoryFactory.provideAuthRepository(singletonCImpl.provideAuthApiProvider.get(), singletonCImpl.provideAuthPreferencesProvider.get(), singletonCImpl.provideAppDatabaseProvider.get());
+          return (T) RepositoryModule_ProvideAuthRepositoryFactory.provideAuthRepository(singletonCImpl.provideAuthApiProvider.get(), singletonCImpl.provideDeviceApiProvider.get(), singletonCImpl.provideAuthPreferencesProvider.get(), singletonCImpl.provideAppDatabaseProvider.get());
 
           case 1: // com.exampro.app.data.api.AuthApi 
           return (T) NetworkModule_ProvideAuthApiFactory.provideAuthApi(singletonCImpl.provideRetrofitProvider.get());
@@ -796,29 +796,29 @@ public final class DaggerExamProApplication_HiltComponents_SingletonC {
           case 8: // com.exampro.app.data.repository.SettingsRepository 
           return (T) new SettingsRepository(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
-          case 9: // @com.exampro.app.di.AuthPrefs android.content.SharedPreferences 
+          case 9: // com.exampro.app.data.api.DeviceApi 
+          return (T) NetworkModule_ProvideDeviceApiFactory.provideDeviceApi(singletonCImpl.provideRetrofitProvider.get());
+
+          case 10: // @com.exampro.app.di.AuthPrefs android.content.SharedPreferences 
           return (T) NetworkModule_ProvideAuthPreferencesFactory.provideAuthPreferences(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
-          case 10: // com.exampro.app.data.db.AppDatabase 
+          case 11: // com.exampro.app.data.db.AppDatabase 
           return (T) DatabaseModule_ProvideAppDatabaseFactory.provideAppDatabase(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
-          case 11: // com.exampro.app.data.db.dao.ExamDao 
+          case 12: // com.exampro.app.data.db.dao.ExamDao 
           return (T) DatabaseModule_ProvideExamDaoFactory.provideExamDao(singletonCImpl.provideAppDatabaseProvider.get());
 
-          case 12: // com.exampro.app.data.db.dao.SubjectDao 
+          case 13: // com.exampro.app.data.db.dao.SubjectDao 
           return (T) DatabaseModule_ProvideSubjectDaoFactory.provideSubjectDao(singletonCImpl.provideAppDatabaseProvider.get());
 
-          case 13: // com.exampro.app.data.repository.QuestionRepository 
+          case 14: // com.exampro.app.data.repository.QuestionRepository 
           return (T) RepositoryModule_ProvideQuestionRepositoryFactory.provideQuestionRepository(singletonCImpl.provideQuestionDaoProvider.get(), singletonCImpl.provideBookmarkDaoProvider.get(), singletonCImpl.provideAuthRepositoryProvider.get());
 
-          case 14: // com.exampro.app.data.db.dao.QuestionDao 
+          case 15: // com.exampro.app.data.db.dao.QuestionDao 
           return (T) DatabaseModule_ProvideQuestionDaoFactory.provideQuestionDao(singletonCImpl.provideAppDatabaseProvider.get());
 
-          case 15: // com.exampro.app.data.db.dao.BookmarkDao 
+          case 16: // com.exampro.app.data.db.dao.BookmarkDao 
           return (T) DatabaseModule_ProvideBookmarkDaoFactory.provideBookmarkDao(singletonCImpl.provideAppDatabaseProvider.get());
-
-          case 16: // com.exampro.app.data.repository.ExamRepository 
-          return (T) RepositoryModule_ProvideExamRepositoryFactory.provideExamRepository(singletonCImpl.provideExamDaoProvider.get());
 
           case 17: // com.exampro.app.data.repository.SyncRepository 
           return (T) new SyncRepository(singletonCImpl.provideExamApiProvider.get(), singletonCImpl.provideSubjectApiProvider.get(), singletonCImpl.provideQuestionApiProvider.get(), singletonCImpl.provideExamDaoProvider.get(), singletonCImpl.provideSubjectDaoProvider.get(), singletonCImpl.provideQuestionDaoProvider.get(), singletonCImpl.provideBookmarkDaoProvider.get(), singletonCImpl.provideAuthRepositoryProvider.get(), singletonCImpl.settingsRepositoryProvider.get());
@@ -832,17 +832,17 @@ public final class DaggerExamProApplication_HiltComponents_SingletonC {
           case 20: // com.exampro.app.data.api.QuestionApi 
           return (T) NetworkModule_ProvideQuestionApiFactory.provideQuestionApi(singletonCImpl.provideRetrofitProvider.get());
 
-          case 21: // com.exampro.app.data.repository.SubjectRepository 
+          case 21: // com.exampro.app.data.repository.ExamRepository 
+          return (T) RepositoryModule_ProvideExamRepositoryFactory.provideExamRepository(singletonCImpl.provideExamDaoProvider.get());
+
+          case 22: // com.exampro.app.data.repository.SubjectRepository 
           return (T) RepositoryModule_ProvideSubjectRepositoryFactory.provideSubjectRepository(singletonCImpl.provideSubjectDaoProvider.get());
 
-          case 22: // com.exampro.app.data.repository.StudyProgressRepository 
+          case 23: // com.exampro.app.data.repository.StudyProgressRepository 
           return (T) RepositoryModule_ProvideStudyProgressRepositoryFactory.provideStudyProgressRepository(singletonCImpl.provideStudyProgressDaoProvider.get());
 
-          case 23: // com.exampro.app.data.db.dao.StudyProgressDao 
+          case 24: // com.exampro.app.data.db.dao.StudyProgressDao 
           return (T) DatabaseModule_ProvideStudyProgressDaoFactory.provideStudyProgressDao(singletonCImpl.provideAppDatabaseProvider.get());
-
-          case 24: // com.exampro.app.data.api.DeviceApi 
-          return (T) NetworkModule_ProvideDeviceApiFactory.provideDeviceApi(singletonCImpl.provideRetrofitProvider.get());
 
           default: throw new AssertionError(id);
         }

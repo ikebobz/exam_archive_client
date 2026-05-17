@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.exampro.app.MainActivity
 import com.exampro.app.R
@@ -28,13 +29,19 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    companion object {
+        private const val TAG = "FCM_SERVICE"
+    }
+
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
+        Log.d(TAG, "Message received from: ${remoteMessage.from}")
         
         remoteMessage.notification?.let {
+            Log.d(TAG, "Notification payload: ${it.title} - ${it.body}")
             sendNotification(it.title ?: "ExamPro", it.body ?: "")
         } ?: run {
-            // Handle data messages if needed
+            Log.d(TAG, "Data payload: ${remoteMessage.data}")
             val title = remoteMessage.data["title"]
             val body = remoteMessage.data["body"]
             if (title != null && body != null) {
@@ -45,15 +52,25 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
+        Log.d(TAG, "New token generated: $token")
         registerTokenOnServer(token)
     }
 
     private fun registerTokenOnServer(token: String) {
         serviceScope.launch {
             try {
-                deviceApi.registerDevice(DeviceRegistrationRequest(token = token))
+                Log.d(TAG, "Attempting to register token on CMS...")
+                val response = deviceApi.registerDevice(DeviceRegistrationRequest(token = token))
+                if (response.isSuccessful) {
+                    Log.d(TAG, "Successfully registered device token on CMS")
+                } else {
+                    val errorCode = response.code()
+                    val errorMessage = response.message()
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "CMS Rejected Token Registration. HTTP $errorCode: $errorMessage | Body: $errorBody")
+                }
             } catch (e: Exception) {
-                // Log error or retry
+                Log.e(TAG, "Exception during token registration on CMS", e)
             }
         }
     }

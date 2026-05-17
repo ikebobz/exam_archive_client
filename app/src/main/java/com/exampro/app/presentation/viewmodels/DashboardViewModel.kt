@@ -4,15 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exampro.app.data.db.dao.ExamDao
 import com.exampro.app.data.db.dao.SubjectDao
-import com.exampro.app.data.db.dao.QuestionDao
 import com.exampro.app.data.models.DashboardStats
 import com.exampro.app.data.repository.AuthRepository
 import com.exampro.app.data.repository.QuestionRepository
+import com.exampro.app.data.repository.SyncRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class DashboardUiState {
@@ -26,8 +27,19 @@ class DashboardViewModel @Inject constructor(
     private val examDao: ExamDao,
     private val subjectDao: SubjectDao,
     private val questionRepository: QuestionRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val syncRepository: SyncRepository
 ) : ViewModel() {
+
+    init {
+        viewModelScope.launch {
+            // Silent background sync of data
+            syncRepository.syncAllData()
+            
+            // Silent background sync of device token for FCM
+            authRepository.syncDeviceToken()
+        }
+    }
 
     val uiState: StateFlow<DashboardUiState> = combine(
         examDao.getAllExams(),

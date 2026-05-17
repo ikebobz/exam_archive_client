@@ -41,6 +41,8 @@ class AuthViewModel @Inject constructor(
             result.onSuccess { profile ->
                 _isLoggedIn.value = true
                 _uiState.value = AuthUiState.Authenticated(profile)
+                // Sync device token on session check if authenticated
+                authRepository.syncDeviceToken()
             }.onFailure {
                 _isLoggedIn.value = false
                 _uiState.value = AuthUiState.Unauthenticated
@@ -54,6 +56,8 @@ class AuthViewModel @Inject constructor(
             val result = authRepository.login(email, password)
             result.onSuccess {
                 _isLoggedIn.value = true
+                // Sync device token immediately upon successful login
+                authRepository.syncDeviceToken()
                 checkSession()
             }.onFailure { e ->
                 _isLoggedIn.value = false
@@ -68,6 +72,8 @@ class AuthViewModel @Inject constructor(
             val result = authRepository.register(email, password, firstName, lastName)
             result.onSuccess {
                 _isLoggedIn.value = true
+                // Sync device token immediately upon successful registration
+                authRepository.syncDeviceToken()
                 checkSession()
             }.onFailure { e ->
                 _uiState.value = AuthUiState.Error(e.message ?: "Registration failed")

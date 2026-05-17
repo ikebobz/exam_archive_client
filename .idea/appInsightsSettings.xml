@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.exampro.app" />
+                  <option name="mobileSdkAppId" value="1:596220383020:android:7301bfcfe52543e375a689" />
+                  <option name="projectId" value="device-streaming-46e6f859" />
+                  <option name="projectNumber" value="596220383020" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

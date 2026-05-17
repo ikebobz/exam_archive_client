@@ -1,5 +1,6 @@
 package com.exampro.app.presentation.viewmodels;
 
+import com.exampro.app.data.api.DeviceApi;
 import com.exampro.app.data.repository.SyncRepository;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
@@ -24,20 +25,25 @@ import javax.inject.Provider;
 public final class MainViewModel_Factory implements Factory<MainViewModel> {
   private final Provider<SyncRepository> syncRepositoryProvider;
 
-  public MainViewModel_Factory(Provider<SyncRepository> syncRepositoryProvider) {
+  private final Provider<DeviceApi> deviceApiProvider;
+
+  public MainViewModel_Factory(Provider<SyncRepository> syncRepositoryProvider,
+      Provider<DeviceApi> deviceApiProvider) {
     this.syncRepositoryProvider = syncRepositoryProvider;
+    this.deviceApiProvider = deviceApiProvider;
   }
 
   @Override
   public MainViewModel get() {
-    return newInstance(syncRepositoryProvider.get());
+    return newInstance(syncRepositoryProvider.get(), deviceApiProvider.get());
   }
 
-  public static MainViewModel_Factory create(Provider<SyncRepository> syncRepositoryProvider) {
-    return new MainViewModel_Factory(syncRepositoryProvider);
+  public static MainViewModel_Factory create(Provider<SyncRepository> syncRepositoryProvider,
+      Provider<DeviceApi> deviceApiProvider) {
+    return new MainViewModel_Factory(syncRepositoryProvider, deviceApiProvider);
   }
 
-  public static MainViewModel newInstance(SyncRepository syncRepository) {
-    return new MainViewModel(syncRepository);
+  public static MainViewModel newInstance(SyncRepository syncRepository, DeviceApi deviceApi) {
+    return new MainViewModel(syncRepository, deviceApi);
   }
 }

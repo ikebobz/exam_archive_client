@@ -1,13 +1,18 @@
 package com.exampro.app.data.repository
 
 import android.content.SharedPreferences
+import android.util.Log
 import com.exampro.app.data.api.AuthApi
+import com.exampro.app.data.api.DeviceApi
+import com.exampro.app.data.api.DeviceRegistrationRequest
 import com.exampro.app.data.db.AppDatabase
 import com.exampro.app.data.models.AuthResponse
 import com.exampro.app.data.models.DashboardStats
 import com.exampro.app.data.models.LoginRequest
 import com.exampro.app.data.models.RegisterRequest
 import com.exampro.app.data.models.UserProfile
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.tasks.await
 import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,6 +20,7 @@ import javax.inject.Singleton
 @Singleton
 class AuthRepository @Inject constructor(
     private val authApi: AuthApi,
+    private val deviceApi: DeviceApi,
     private val sharedPreferences: SharedPreferences,
     private val database: AppDatabase
 ) {
@@ -27,6 +33,7 @@ class AuthRepository @Inject constructor(
         private const val KEY_TOTAL_EXAMS = "total_exams"
         private const val KEY_TOTAL_SUBJECTS = "total_subjects"
         private const val KEY_TOTAL_QUESTIONS = "total_questions"
+        private const val TAG = "AuthRepository"
     }
 
     suspend fun login(email: String, password: String): Result<AuthResponse> {
@@ -105,6 +112,32 @@ class AuthRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    suspend fun syncDeviceToken() {
+        try {
+            if (!isLoggedIn()) {
+                Log.d(TAG, "Not logged in, skipping device token sync")
+                return
+            }
+
+            Log.d(TAG, "Retrieving FCM token...")
+            val token = FirebaseMessaging.getInstance().token.await()
+            Log.d(TAG, "FCM Token: $token")
+
+            val response = deviceApi.registerDevice(DeviceRegistrationRequest(token = token))
+            if (response.isSuccessful) {
+                Log.d(TAG, "Device token successfully registered with CMS")
+            } else {
+                Log.e(TAG, "Failed to register device token: ${response.code()} ${response.message()}")
+                val errorBody = response.errorBody()?.string()
+                if (errorBody != null) {
+                    Log.e(TAG, "Error body: $errorBody")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing device token", e)
         }
     }
 

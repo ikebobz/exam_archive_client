@@ -4,6 +4,7 @@ import com.exampro.app.data.db.dao.ExamDao;
 import com.exampro.app.data.db.dao.SubjectDao;
 import com.exampro.app.data.repository.AuthRepository;
 import com.exampro.app.data.repository.QuestionRepository;
+import com.exampro.app.data.repository.SyncRepository;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
 import dagger.internal.QualifierMetadata;
@@ -33,30 +34,36 @@ public final class DashboardViewModel_Factory implements Factory<DashboardViewMo
 
   private final Provider<AuthRepository> authRepositoryProvider;
 
+  private final Provider<SyncRepository> syncRepositoryProvider;
+
   public DashboardViewModel_Factory(Provider<ExamDao> examDaoProvider,
       Provider<SubjectDao> subjectDaoProvider,
       Provider<QuestionRepository> questionRepositoryProvider,
-      Provider<AuthRepository> authRepositoryProvider) {
+      Provider<AuthRepository> authRepositoryProvider,
+      Provider<SyncRepository> syncRepositoryProvider) {
     this.examDaoProvider = examDaoProvider;
     this.subjectDaoProvider = subjectDaoProvider;
     this.questionRepositoryProvider = questionRepositoryProvider;
     this.authRepositoryProvider = authRepositoryProvider;
+    this.syncRepositoryProvider = syncRepositoryProvider;
   }
 
   @Override
   public DashboardViewModel get() {
-    return newInstance(examDaoProvider.get(), subjectDaoProvider.get(), questionRepositoryProvider.get(), authRepositoryProvider.get());
+    return newInstance(examDaoProvider.get(), subjectDaoProvider.get(), questionRepositoryProvider.get(), authRepositoryProvider.get(), syncRepositoryProvider.get());
   }
 
   public static DashboardViewModel_Factory create(Provider<ExamDao> examDaoProvider,
       Provider<SubjectDao> subjectDaoProvider,
       Provider<QuestionRepository> questionRepositoryProvider,
-      Provider<AuthRepository> authRepositoryProvider) {
-    return new DashboardViewModel_Factory(examDaoProvider, subjectDaoProvider, questionRepositoryProvider, authRepositoryProvider);
+      Provider<AuthRepository> authRepositoryProvider,
+      Provider<SyncRepository> syncRepositoryProvider) {
+    return new DashboardViewModel_Factory(examDaoProvider, subjectDaoProvider, questionRepositoryProvider, authRepositoryProvider, syncRepositoryProvider);
   }
 
   public static DashboardViewModel newInstance(ExamDao examDao, SubjectDao subjectDao,
-      QuestionRepository questionRepository, AuthRepository authRepository) {
-    return new DashboardViewModel(examDao, subjectDao, questionRepository, authRepository);
+      QuestionRepository questionRepository, AuthRepository authRepository,
+      SyncRepository syncRepository) {
+    return new DashboardViewModel(examDao, subjectDao, questionRepository, authRepository, syncRepository);
   }
 }

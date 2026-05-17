@@ -2,6 +2,7 @@ package com.exampro.app.di
 
 import android.content.SharedPreferences
 import com.exampro.app.data.api.AuthApi
+import com.exampro.app.data.api.DeviceApi
 import com.exampro.app.data.db.AppDatabase
 import com.exampro.app.data.db.dao.BookmarkDao
 import com.exampro.app.data.db.dao.ExamDao
@@ -27,10 +28,11 @@ object RepositoryModule {
     @Singleton
     fun provideAuthRepository(
         authApi: AuthApi,
+        deviceApi: DeviceApi,
         @AuthPrefs prefs: SharedPreferences,
         database: AppDatabase
     ): AuthRepository {
-        return AuthRepository(authApi, prefs, database)
+        return AuthRepository(authApi, deviceApi, prefs, database)
     }
 
     @Provides

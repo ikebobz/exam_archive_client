@@ -2,6 +2,7 @@ package com.exampro.app.di;
 
 import android.content.SharedPreferences;
 import com.exampro.app.data.api.AuthApi;
+import com.exampro.app.data.api.DeviceApi;
 import com.exampro.app.data.db.AppDatabase;
 import com.exampro.app.data.repository.AuthRepository;
 import dagger.internal.DaggerGenerated;
@@ -28,30 +29,34 @@ import javax.inject.Provider;
 public final class RepositoryModule_ProvideAuthRepositoryFactory implements Factory<AuthRepository> {
   private final Provider<AuthApi> authApiProvider;
 
+  private final Provider<DeviceApi> deviceApiProvider;
+
   private final Provider<SharedPreferences> prefsProvider;
 
   private final Provider<AppDatabase> databaseProvider;
 
   public RepositoryModule_ProvideAuthRepositoryFactory(Provider<AuthApi> authApiProvider,
-      Provider<SharedPreferences> prefsProvider, Provider<AppDatabase> databaseProvider) {
+      Provider<DeviceApi> deviceApiProvider, Provider<SharedPreferences> prefsProvider,
+      Provider<AppDatabase> databaseProvider) {
     this.authApiProvider = authApiProvider;
+    this.deviceApiProvider = deviceApiProvider;
     this.prefsProvider = prefsProvider;
     this.databaseProvider = databaseProvider;
   }
 
   @Override
   public AuthRepository get() {
-    return provideAuthRepository(authApiProvider.get(), prefsProvider.get(), databaseProvider.get());
+    return provideAuthRepository(authApiProvider.get(), deviceApiProvider.get(), prefsProvider.get(), databaseProvider.get());
   }
 
   public static RepositoryModule_ProvideAuthRepositoryFactory create(
-      Provider<AuthApi> authApiProvider, Provider<SharedPreferences> prefsProvider,
-      Provider<AppDatabase> databaseProvider) {
-    return new RepositoryModule_ProvideAuthRepositoryFactory(authApiProvider, prefsProvider, databaseProvider);
+      Provider<AuthApi> authApiProvider, Provider<DeviceApi> deviceApiProvider,
+      Provider<SharedPreferences> prefsProvider, Provider<AppDatabase> databaseProvider) {
+    return new RepositoryModule_ProvideAuthRepositoryFactory(authApiProvider, deviceApiProvider, prefsProvider, databaseProvider);
   }
 
-  public static AuthRepository provideAuthRepository(AuthApi authApi, SharedPreferences prefs,
-      AppDatabase database) {
-    return Preconditions.checkNotNullFromProvides(RepositoryModule.INSTANCE.provideAuthRepository(authApi, prefs, database));
+  public static AuthRepository provideAuthRepository(AuthApi authApi, DeviceApi deviceApi,
+      SharedPreferences prefs, AppDatabase database) {
+    return Preconditions.checkNotNullFromProvides(RepositoryModule.INSTANCE.provideAuthRepository(authApi, deviceApi, prefs, database));
   }
 }
